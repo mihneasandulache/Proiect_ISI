@@ -1,0 +1,16 @@
+<div class="container">
+  <div #mapViewNode class="map-view"></div>
+
+  <!-- Place Category Dropdown -->
+  <div class="places-control esri-widget esri-widget--panel">
+    <label>
+      Choose a place type:
+      <select [(ngModel)]="selectedCategory" (change)="changeCategory(selectedCategory)">
+        <option *ngFor="let category of placeCategories" [value]="category">{{ category }}</option>
+      </select>
+    </label>
+  </div>
+
+  <!-- Clear Route Button -->
+  <button class="fab" (click)="clearRouter()">×</button>
+</div>
