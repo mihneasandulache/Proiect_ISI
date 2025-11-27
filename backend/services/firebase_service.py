@@ -20,11 +20,8 @@ class FirebaseService:
 
             cred = credentials.Certificate(credentials_path)
 
-            # Load the credentials to get database URL
-            with open(credentials_path, 'r') as f:
-                cred_data = json.load(f)
-                project_id = cred_data.get('project_id')
-                database_url = f'https://{project_id}-default-rtdb.firebaseio.com/'
+            # Use Europe region database URL
+            database_url = 'https://isi-tema-d98b9-default-rtdb.europe-west1.firebasedatabase.app/'
 
             firebase_admin.initialize_app(cred, {
                 'databaseURL': database_url
