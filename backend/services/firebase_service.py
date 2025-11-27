@@ -7,29 +7,29 @@ import json
 class FirebaseService:
     def __init__(self):
         """Initialize Firebase Admin SDK"""
-        # Use environment variable or service account file
         if not firebase_admin._apps:
-            # For local development
-            if os.path.exists('firebase-credentials.json'):
-                cred = credentials.Certificate('firebase-credentials.json')
-            else:
-                # For deployment (use environment variables)
-                cred = credentials.Certificate({
-                    "type": "service_account",
-                    "project_id": os.environ.get('FIREBASE_PROJECT_ID'),
-                    "private_key_id": os.environ.get('FIREBASE_PRIVATE_KEY_ID'),
-                    "private_key": os.environ.get('FIREBASE_PRIVATE_KEY', '').replace('\\n', '\n'),
-                    "client_email": os.environ.get('FIREBASE_CLIENT_EMAIL'),
-                    "client_id": os.environ.get('FIREBASE_CLIENT_ID'),
-                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                    "token_uri": "https://oauth2.googleapis.com/token",
-                })
-            
+            # Load credentials from JSON file
+            credentials_path = os.path.join(os.path.dirname(__file__), '..', 'firebase-credentials.json')
+
+            if not os.path.exists(credentials_path):
+                raise FileNotFoundError(
+                    f"Firebase credentials file not found at {credentials_path}. "
+                    "Please download your service account key from Firebase Console and save it as "
+                    "'backend/firebase-credentials.json'"
+                )
+
+            cred = credentials.Certificate(credentials_path)
+
+            # Load the credentials to get database URL
+            with open(credentials_path, 'r') as f:
+                cred_data = json.load(f)
+                project_id = cred_data.get('project_id')
+                database_url = f'https://{project_id}-default-rtdb.firebaseio.com/'
+
             firebase_admin.initialize_app(cred, {
-                'databaseURL': os.environ.get('FIREBASE_DATABASE_URL', 
-                    'https://isc-proiect-default-rtdb.firebaseio.com/')
+                'databaseURL': database_url
             })
-        
+
         self.db = db.reference()
     
     # ============= ATTRACTIONS =============

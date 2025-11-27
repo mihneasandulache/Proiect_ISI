@@ -1,11 +1,13 @@
 import { BrowserModule } from "@angular/platform-browser";
 import { NgModule } from "@angular/core";
 import { FormsModule } from "@angular/forms";
+import { HttpClientModule } from "@angular/common/http";
 
 import { AppComponent } from "./app.component";
 import { MapComponent } from "./pages/map/map.component";
 import { HomeComponent } from "./pages/home/home.component";
 import { FirebaseService } from './services/firebase.service';
+import { ApiService } from './services/api.service';
 import { AppRoutingModule } from "./app-routing.module";
 
 import { MatTabsModule } from '@angular/material/tabs';
@@ -24,13 +26,14 @@ import { FlexLayoutModule } from '@angular/flex-layout';
     BrowserModule,
     AppRoutingModule,
     FormsModule,
+    HttpClientModule,
     MatTabsModule,
     MatButtonModule,
     MatDividerModule,
     MatListModule,
     FlexLayoutModule
   ],
-  providers: [FirebaseService],
+  providers: [FirebaseService, ApiService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
