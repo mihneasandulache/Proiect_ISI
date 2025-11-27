@@ -55,7 +55,6 @@ a.out
 #venv
 venv/
 
-# Firebase credentials (sensitive!)
-backend/firebase-credentials.json
+
 backend/.env
 .env
