@@ -58,3 +58,5 @@ venv/
 
 backend/.env
 .env
+backend/services/__pycache__/
+backend/seed_data.py
