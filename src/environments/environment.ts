@@ -4,14 +4,16 @@
 
 export const environment = {
   firebase: {
-    apiKey: "AIzaSyDxMwcP0sQlrKsd69qg_EQx5LhMFa-B-aY",
-    authDomain: "isc-proiect.firebaseapp.com",
-    projectId: "isc-proiect",
-    storageBucket: "isc-proiect.firebasestorage.app",
-    messagingSenderId: "984416168269",
-    appId: "1:984416168269:web:1cc3adcd8fd6cf80346f04",
-    measurementId: "G-HB35MCJBTV"   
+    apiKey: "AIzaSyBIT8OzFQ4qrjKpXfQ-RF81f69hZple4TU",
+    authDomain: "isi-tema-d98b9.firebaseapp.com",
+    projectId: "isi-tema-d98b9",
+    storageBucket: "isi-tema-d98b9.firebasestorage.app",
+    messagingSenderId: "53636069082",
+    appId: "1:53636069082:web:2cb84a07c5bec840e717e3",
+    measurementId: "G-S9YTN26TB7",
+    databaseURL: "https://isi-tema-d98b9-default-rtdb.firebaseio.com"
   },
+  apiUrl: 'http://localhost:5000/api',
   production: false
 };
 
