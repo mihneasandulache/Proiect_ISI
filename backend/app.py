@@ -383,6 +383,111 @@ def like_itinerary(itinerary_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# ============= ROUTE CALCULATION ENDPOINTS =============
+
+@app.route('/api/routes/calculate', methods=['POST'])
+def calculate_route():
+    """Calculate optimal route using custom algorithm"""
+    try:
+        data = request.json
+        required_fields = ['attractions']
+
+        if not all(field in data for field in required_fields):
+            return jsonify({'error': 'Missing required fields'}), 400
+
+        attractions = data['attractions']
+        start_location = data.get('start_location')
+
+        if not attractions or len(attractions) == 0:
+            return jsonify({'error': 'No attractions provided'}), 400
+
+        # Calculate route using custom algorithm
+        custom_route = route_optimizer.calculate_optimal_route(attractions, start_location)
+
+        # Calculate route geometry
+        route_geometry = route_optimizer.calculate_route_geometry(custom_route['route'], start_location)
+        custom_route['route_geometry'] = route_geometry
+
+        return jsonify(custom_route), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/routes/compare', methods=['POST'])
+def compare_routes():
+    """Compare custom algorithm with ArcGIS routing"""
+    try:
+        data = request.json
+        required_fields = ['attractions']
+
+        if not all(field in data for field in required_fields):
+            return jsonify({'error': 'Missing required fields'}), 400
+
+        attractions = data['attractions']
+        start_location = data.get('start_location')
+
+        if not attractions or len(attractions) == 0:
+            return jsonify({'error': 'No attractions provided'}), 400
+
+        # Calculate route using custom algorithm
+        custom_route = route_optimizer.calculate_optimal_route(attractions, start_location)
+        custom_route['route_geometry'] = route_optimizer.calculate_route_geometry(custom_route['route'], start_location)
+
+        # Calculate route using ArcGIS (if available)
+        arcgis_route = arcgis_service.calculate_optimal_route(attractions, start_location)
+
+        return jsonify({
+            'custom_route': custom_route,
+            'arcgis_route': arcgis_route
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/attractions/search', methods=['GET'])
+def search_attractions():
+    """Search attractions for dropdown with filters"""
+    try:
+        search_query = request.args.get('q', '').lower()
+        city_id = request.args.get('city_id')
+        limit = int(request.args.get('limit', 50))
+
+        # Get all attractions with optional city filter
+        attractions = fb_service.get_attractions(city_id=city_id)
+
+        # Filter by search query if provided
+        if search_query:
+            filtered_attractions = []
+            for attr_id, attr_data in attractions.items():
+                attr_name = attr_data.get('name', '').lower()
+                attr_city = attr_data.get('city', '').lower()
+                attr_region = attr_data.get('region', '').lower()
+
+                if (search_query in attr_name or
+                    search_query in attr_city or
+                    search_query in attr_region):
+                    filtered_attractions.append({
+                        'id': attr_id,
+                        **attr_data
+                    })
+
+            # Limit results
+            filtered_attractions = filtered_attractions[:limit]
+            return jsonify(filtered_attractions), 200
+
+        # Return all (limited)
+        result = []
+        for attr_id, attr_data in list(attractions.items())[:limit]:
+            result.append({
+                'id': attr_id,
+                **attr_data
+            })
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # ============= HEALTH CHECK =============
 
 @app.route('/api/health', methods=['GET'])
