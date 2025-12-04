@@ -15,6 +15,60 @@ auth_service = AuthService()
 route_optimizer = RouteOptimizer()
 arcgis_service = ArcGISRouteService()
 
+# ============= AUTH ENDPOINTS =============
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    """User login"""
+    try:
+        data = request.json
+        required_fields = ['email', 'password']
+
+        if not all(field in data for field in required_fields):
+            return jsonify({'error': 'Missing email or password'}), 400
+
+        # Get user by email
+        user_data = fb_service.get_user_by_email(data['email'])
+        if not user_data:
+            return jsonify({'error': 'Invalid email or password'}), 401
+
+        user_id = user_data.get('user_id')
+        stored_password = user_data.get('password')
+
+        # Verify password
+        if not auth_service.verify_password(data['password'], stored_password):
+            return jsonify({'error': 'Invalid email or password'}), 401
+
+        # Generate JWT token
+        token = auth_service.generate_token(user_id, data['email'])
+
+        # Return user data without password
+        user_data.pop('password', None)
+
+        return jsonify({
+            'token': token,
+            'user': user_data,
+            'message': 'Login successful'
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/auth/logout', methods=['POST'])
+def logout():
+    """User logout (client-side token removal)"""
+    return jsonify({'message': 'Logout successful'}), 200
+
+@app.route('/api/auth/verify', methods=['GET'])
+@auth_service.require_auth
+def verify_token():
+    """Verify JWT token"""
+    return jsonify({
+        'valid': True,
+        'user_id': request.user_id,
+        'email': request.user_email
+    }), 200
+
 # ============= USERS ENDPOINTS =============
 
 @app.route('/api/users', methods=['POST'])
@@ -32,10 +86,21 @@ def create_user():
         if existing_user:
             return jsonify({'error': 'Email already registered'}), 400
 
+        # Hash password before storing
+        data['password'] = auth_service.hash_password(data['password'])
         data['created'] = datetime.now().isoformat()
+
         user_id = fb_service.create_user(data)
 
-        return jsonify({'user_id': user_id, 'message': 'User created'}), 201
+        # Generate token for auto-login after registration
+        token = auth_service.generate_token(user_id, data['email'])
+
+        return jsonify({
+            'user_id': user_id,
+            'token': token,
+            'message': 'User created successfully'
+        }), 201
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
