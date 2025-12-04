@@ -1,6 +1,9 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from services.firebase_service import FirebaseService
+from services.auth_service import AuthService
+from services.route_optimizer import RouteOptimizer
+from services.arcgis_service import ArcGISRouteService
 from datetime import datetime
 import os
 
@@ -8,6 +11,9 @@ app = Flask(__name__)
 CORS(app)
 
 fb_service = FirebaseService()
+auth_service = AuthService()
+route_optimizer = RouteOptimizer()
+arcgis_service = ArcGISRouteService()
 
 # ============= USERS ENDPOINTS =============
 
