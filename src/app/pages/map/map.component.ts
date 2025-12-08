@@ -22,10 +22,6 @@ import Point from '@arcgis/core/geometry/Point';
 
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 
-import FeatureSet from '@arcgis/core/rest/support/FeatureSet';
-import RouteParameters from '@arcgis/core/rest/support/RouteParameters';
-import * as route from "@arcgis/core/rest/route.js";
-
 import Polygon from '@arcgis/core/geometry/Polygon';
 import Polyline from '@arcgis/core/geometry/Polyline';
 
@@ -47,8 +43,6 @@ export class MapComponent implements OnInit, OnDestroy {
   map: esri.Map;
   view: esri.MapView;
   graphicsLayer: esri.GraphicsLayer;
-  graphicsLayerUserPoints: esri.GraphicsLayer;
-  graphicsLayerRoutes: esri.GraphicsLayer;
   trailheadsLayer: esri.FeatureLayer;
   tourismLayer: esri.FeatureLayer;
 
@@ -72,7 +66,6 @@ export class MapComponent implements OnInit, OnDestroy {
   center: Array<number> = [26.1025, 44.4268];
   basemap = "streets-vector";
   loaded = false;
-  directionsElement: any;
 
   constructor(
     private fb: FirebaseService,
@@ -136,7 +129,6 @@ export class MapComponent implements OnInit, OnDestroy {
       await this.view.when();
       console.log("ArcGIS map loaded");
       this.setupFirebaseSync();
-      this.addRouting();
       this.addSearchWidget();
       return this.view;
     } catch (error) {
@@ -300,134 +292,12 @@ export class MapComponent implements OnInit, OnDestroy {
     this.graphicsLayer = new GraphicsLayer();
     this.map.add(this.graphicsLayer);
 
-    this.graphicsLayerUserPoints = new GraphicsLayer();
-    this.map.add(this.graphicsLayerUserPoints);
-
-    this.graphicsLayerRoutes = new GraphicsLayer();
-    this.map.add(this.graphicsLayerRoutes);
-
     this.graphicsLayerFirebase = new GraphicsLayer({ title: 'Firebase Points' });
     this.map.add(this.graphicsLayerFirebase);
   }
 
-  addRouting() {
-    const routeUrl = "https://route-api.arcgis.com/arcgis/rest/services/World/Route/NAServer/Route_World";
-    this.view.on("click", (event) => {
-      const point = event.mapPoint;
-      if (!point) return;
-
-      if (this.graphicsLayerUserPoints.graphics.length === 2) {
-        this.removeRoutes();
-        this.removePoints();
-      }
-      this.addPoint(point.latitude, point.longitude);
-      this.addPointToFirebase(point.latitude, point.longitude);
-
-      if (this.graphicsLayerUserPoints.graphics.length === 2) {
-        this.calculateRoute(routeUrl);
-      }
-    });
-  }
-
-  addPointToFirebase(lat: number, lng: number) {
-    try {
-      this.fb.addPoint({ lat, lng, clientId: this.clientId });
-    } catch (err) {
-      console.error('Error pushing point to Firebase', err);
-    }
-  }
-
-  addPoint(lat: number, lng: number) {
-    let point = new Point({
-      longitude: lng,
-      latitude: lat
-    });
-
-    const simpleMarkerSymbol = {
-      type: "simple-marker",
-      color: [226, 119, 40],  // Orange
-      outline: {
-        color: [255, 255, 255], // White
-        width: 1
-      }
-    };
-
-    let pointGraphic: esri.Graphic = new Graphic({
-      geometry: point,
-      symbol: simpleMarkerSymbol
-    });
-
-    this.graphicsLayerUserPoints.add(pointGraphic);
-  }
-
-  removePoints() {
-    this.graphicsLayerUserPoints.removeAll();
-  }
-
-  removeRoutes() {
-    this.graphicsLayerRoutes.removeAll();
-  }
-
-  async calculateRoute(routeUrl: string) {
-    const routeParams = new RouteParameters({
-      stops: new FeatureSet({
-        features: this.graphicsLayerUserPoints.graphics.toArray()
-      }),
-      returnDirections: true
-    });
-
-    try {
-      const data = await route.solve(routeUrl, routeParams);
-      this.displayRoute(data);
-    } catch (error) {
-      console.error("Error calculating route: ", error);
-      alert("Error calculating route");
-    }
-  }
-
-  displayRoute(data: any) {
-    for (const result of data.routeResults) {
-      result.route.symbol = {
-        type: "simple-line",
-        color: [5, 150, 255],
-        width: 3
-      };
-      this.graphicsLayerRoutes.graphics.add(result.route);
-    }
-    if (data.routeResults.length > 0) {
-      this.showDirections(data.routeResults[0].directions.features);
-    } else {
-      alert("No directions found");
-    }
-  }
-
-  clearRouter() {
-    if (this.view) {
-      // Remove all graphics related to routes
-      this.removeRoutes();
-      this.removePoints();
-      console.log("Route cleared");
-      this.view.ui.remove(this.directionsElement);
-      this.view.ui.empty("top-right");
-      console.log("Directions cleared");
-    }
-  }
-
-  showDirections(features: any[]) {
-    this.directionsElement = document.createElement("ol");
-    this.directionsElement.classList.add("esri-widget", "esri-widget--panel", "esri-directions__scroller");
-    this.directionsElement.style.marginTop = "0";
-    this.directionsElement.style.padding = "15px 15px 15px 30px";
-
-    features.forEach((result, i) => {
-      const direction = document.createElement("li");
-      direction.innerHTML = `${result.attributes.text} (${result.attributes.length} miles)`;
-      this.directionsElement.appendChild(direction);
-    });
-
-    this.view.ui.empty("top-right");
-    this.view.ui.add(this.directionsElement, "top-right");
-  }
+  // Route calculation is handled by backend algorithm
+  // Points and routes are managed through your custom route optimizer service
 
   setupFirebaseSync() {
     this.firebaseUnsubscribe = this.fb.subscribePoints((data) => {
