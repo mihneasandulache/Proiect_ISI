@@ -1,12 +1,12 @@
 <div class="container">
   <div #mapViewNode class="map-view"></div>
 
-  <!-- Place Category Dropdown -->
-  <div class="places-control esri-widget esri-widget--panel">
+  <!-- Tourism Attraction Filter -->
+  <div class="tourism-filter esri-widget esri-widget--panel">
     <label>
-      Choose a place type:
-      <select [(ngModel)]="selectedCategory" (change)="changeCategory(selectedCategory)">
-        <option *ngFor="let category of placeCategories" [value]="category">{{ category }}</option>
+      Filter Tourist Attractions:
+      <select [(ngModel)]="selectedTourismFilter" (change)="filterTourismAttractions(selectedTourismFilter)">
+        <option *ngFor="let option of tourismFilterOptions" [value]="option.value">{{ option.label }}</option>
       </select>
     </label>
   </div>
