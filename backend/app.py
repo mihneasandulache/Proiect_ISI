@@ -4,6 +4,7 @@ from services.firebase_service import FirebaseService
 from services.auth_service import AuthService
 from services.route_optimizer import RouteOptimizer
 from services.arcgis_service import ArcGISRouteService
+from services.tourism_service import TourismService
 from datetime import datetime
 import os
 
@@ -14,6 +15,7 @@ fb_service = FirebaseService()
 auth_service = AuthService()
 route_optimizer = RouteOptimizer()
 arcgis_service = ArcGISRouteService()
+tourism_service = TourismService()
 
 # ============= AUTH ENDPOINTS =============
 
@@ -485,6 +487,40 @@ def search_attractions():
 
         return jsonify(result), 200
 
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ============= TOURISM ENDPOINTS =============
+
+@app.route('/api/tourism/config', methods=['GET'])
+def get_tourism_config():
+    """Get tourism layer configuration"""
+    try:
+        config = tourism_service.get_filter_config()
+        return jsonify(config), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/tourism/layer-info', methods=['GET'])
+def get_tourism_layer_info():
+    """Get layer information for frontend configuration"""
+    try:
+        layer_info = tourism_service.get_layer_info()
+        return jsonify(layer_info), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/tourism/filter', methods=['GET'])
+def get_tourism_filter():
+    """Get definition expression for filtering attractions"""
+    try:
+        tourism_type = request.args.get('type', 'all')
+        definition_expression = tourism_service.build_definition_expression(tourism_type)
+
+        return jsonify({
+            'definition_expression': definition_expression,
+            'tourism_type': tourism_type
+        }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

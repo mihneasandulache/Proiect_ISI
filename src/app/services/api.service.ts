@@ -181,4 +181,19 @@ export class ApiService {
   likeItinerary(id: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/itineraries/${id}/like`, {});
   }
+
+  // ============= TOURISM =============
+
+  getTourismConfig(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/tourism/config`);
+  }
+
+  getTourismLayerInfo(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/tourism/layer-info`);
+  }
+
+  getTourismFilter(tourismType: string): Observable<any> {
+    let params = new HttpParams().set('type', tourismType);
+    return this.http.get(`${this.apiUrl}/tourism/filter`, { params });
+  }
 }

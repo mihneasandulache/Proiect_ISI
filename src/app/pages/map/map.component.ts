@@ -29,12 +29,9 @@ import * as route from "@arcgis/core/rest/route.js";
 import Polygon from '@arcgis/core/geometry/Polygon';
 import Polyline from '@arcgis/core/geometry/Polyline';
 
-import * as locator from "@arcgis/core/rest/locator.js";
-import * as reactiveUtils from "@arcgis/core/core/reactiveUtils.js";
-
-import SimpleMarkerSymbol from "@arcgis/core/symbols/SimpleMarkerSymbol";
 import Search from '@arcgis/core/widgets/Search';
 import { FirebaseService } from '../../services/firebase.service';
+import { ApiService } from '../../services/api.service';
 
 
 @Component({
@@ -53,15 +50,23 @@ export class MapComponent implements OnInit, OnDestroy {
   graphicsLayerUserPoints: esri.GraphicsLayer;
   graphicsLayerRoutes: esri.GraphicsLayer;
   trailheadsLayer: esri.FeatureLayer;
+  tourismLayer: esri.FeatureLayer;
 
-  placesLayer: esri.GraphicsLayer;
-  selectedCategory: string = "Tourist attractions";
-  locatorUrl: string = "https://geocode-api.arcgis.com/arcgis/rest/services/World/GeocodeServer";
-
-  placeCategories = [
-    "Historical Monument",
-    "Museum"
+  // Tourism attraction filter options (excluding accommodations)
+  tourismFilterOptions = [
+    { value: "all", label: "All Attractions", selected: true },
+    { value: "museum", label: "Museums", selected: false },
+    { value: "attraction", label: "Tourist Attractions", selected: false },
+    { value: "viewpoint", label: "Viewpoints", selected: false },
+    { value: "artwork", label: "Artwork", selected: false },
+    { value: "gallery", label: "Galleries", selected: false },
+    { value: "theme_park", label: "Theme Parks", selected: false },
+    { value: "zoo", label: "Zoos", selected: false },
+    { value: "aquarium", label: "Aquariums", selected: false },
+    { value: "picnic_site", label: "Picnic Sites", selected: false }
   ];
+
+  selectedTourismFilter: string = "all";
 
   zoom = 10;
   center: Array<number> = [26.1025, 44.4268];
@@ -69,7 +74,10 @@ export class MapComponent implements OnInit, OnDestroy {
   loaded = false;
   directionsElement: any;
 
-  constructor(private fb: FirebaseService) { }
+  constructor(
+    private fb: FirebaseService,
+    private apiService: ApiService
+  ) { }
   private firebaseUnsubscribe: (() => void) | null = null;
   private userPosUnsubscribe: (() => void) | null = null;
   private clientId: string = 'client_' + Math.random().toString(36).substr(2, 9);
@@ -78,9 +86,24 @@ export class MapComponent implements OnInit, OnDestroy {
   graphicsLayerFirebase: esri.GraphicsLayer;
 
   ngOnInit() {
+    // Load tourism configuration from backend
+    this.loadTourismConfig();
+
     this.initializeMap().then(() => {
       this.loaded = this.view.ready;
       this.mapLoadedEvent.emit(true);
+    });
+  }
+
+  loadTourismConfig() {
+    this.apiService.getTourismConfig().subscribe({
+      next: (config) => {
+        this.tourismFilterOptions = config.filter_options;
+        console.log('Tourism config loaded from backend:', config);
+      },
+      error: (err) => {
+        console.error('Error loading tourism config:', err);
+      }
     });
   }
 
@@ -114,24 +137,12 @@ export class MapComponent implements OnInit, OnDestroy {
       console.log("ArcGIS map loaded");
       this.setupFirebaseSync();
       this.addRouting();
-      this.setupPlaceSearch();
       this.addSearchWidget();
       return this.view;
     } catch (error) {
       console.error("Error loading the map: ", error);
       alert("Error loading the map");
     }
-  }
-
-  setupPlaceSearch() {
-    reactiveUtils.when(
-      () => this.view.stationary === true,
-      () => {
-        if (this.view.extent) {
-          this.findPlaces(this.selectedCategory, this.view.extent);
-        }
-      }
-    );
   }
 
   addSearchWidget() {
@@ -143,63 +154,23 @@ export class MapComponent implements OnInit, OnDestroy {
     this.view.ui.add(search, "top-right");
   }
 
+  filterTourismAttractions(filterValue: string) {
+    this.selectedTourismFilter = filterValue;
 
-  async findPlaces(category: string, extent: esri.Extent) {
-    const results = await locator.addressToLocations(this.locatorUrl, {
-      address: {},
-      searchExtent: extent,
-      categories: [category],
-      maxLocations: 50,
-      outFields: ["Place_addr", "PlaceName"]
-    });
+    // Get definition expression from backend
+    this.apiService.getTourismFilter(filterValue).subscribe({
+      next: (response) => {
+        const definitionExpression = response.definition_expression;
 
-    this.placesLayer.removeAll();
-
-    const symbol = new SimpleMarkerSymbol({
-      color: "#000000",
-      size: 10,
-      outline: { color: "#ffffff", width: 1 }
-    });
-
-    results.forEach(result => {
-      const placeGraphic = new Graphic({
-        geometry: result.location,
-        attributes: result.attributes,
-        symbol,
-        popupTemplate: {
-          title: "{PlaceName}",
-          content: "{Place_addr}"
+        if (this.tourismLayer) {
+          this.tourismLayer.definitionExpression = definitionExpression;
+          console.log("Tourism filter applied:", filterValue, definitionExpression);
         }
-      });
-
-      this.view.on("click", (event) => {
-        if (event.mapPoint && event.mapPoint.latitude === result.location.latitude && event.mapPoint.longitude === result.location.longitude) {
-          if (this.graphicsLayerUserPoints.graphics.length === 2) {
-            this.removeRoutes();
-            this.removePoints();
-          }
-          this.addPoint(result.location.latitude, result.location.longitude);
-          if (this.graphicsLayerUserPoints.graphics.length === 2) {
-            this.calculateRoute("https://route-api.arcgis.com/arcgis/rest/services/World/Route/NAServer/Route_World");
-          }
-        }
-      });
-
-      this.placesLayer.add(placeGraphic);
+      },
+      error: (err) => {
+        console.error('Error getting tourism filter:', err);
+      }
     });
-  }
-
-
-  changeCategory(category: string) {
-    this.selectedCategory = category;
-    if (this.view && this.view.extent) {
-      this.findPlaces(category, this.view.extent);
-    }
-  }
-
-  clearPlaces() {
-    this.placesLayer.removeAll();
-    console.log("Places cleared");
   }
 
   addGraphicElements() {
@@ -298,7 +269,31 @@ export class MapComponent implements OnInit, OnDestroy {
     });
     this.map.add(parksLayer, 0);
 
-    console.log("Feature layers added");
+    // Add OpenStreetMap Tourism Layer for Europe (includes Romania)
+    // Exclude all accommodation types
+    const excludeAccommodation = "tourism NOT IN ('apartment', 'camp_pitch', 'camp_site', 'caravan_site', 'chalet', 'guest_house', 'hostel', 'hotel', 'motel', 'trail_riding_station')";
+
+    this.tourismLayer = new FeatureLayer({
+      url: "https://services-eu1.arcgis.com/zci5bUiJ8olAal7N/arcgis/rest/services/OSM_EU_Tourism/FeatureServer/0",
+      title: "Romanian Tourist Attractions",
+      outFields: ["name", "tourism", "historic", "amenity", "description", "opening_hours", "website", "phone"],
+      definitionExpression: `name IS NOT NULL AND ${excludeAccommodation}`,
+      popupTemplate: {
+        title: "{name}",
+        content: `
+          <div style="padding: 10px;">
+            <p><strong>Type:</strong> {tourism} {historic} {amenity}</p>
+            <p><strong>Description:</strong> {description}</p>
+            <p><strong>Opening Hours:</strong> {opening_hours}</p>
+            <p><strong>Website:</strong> {website}</p>
+            <p><strong>Phone:</strong> {phone}</p>
+          </div>
+        `
+      }
+    } as any);
+    this.map.add(this.tourismLayer);
+
+    console.log("Feature layers added including Romanian tourism layer");
   }
 
   addGraphicsLayer() {
@@ -311,8 +306,6 @@ export class MapComponent implements OnInit, OnDestroy {
     this.graphicsLayerRoutes = new GraphicsLayer();
     this.map.add(this.graphicsLayerRoutes);
 
-    this.placesLayer = new GraphicsLayer({ title: "Places" });
-    this.map.add(this.placesLayer);
     this.graphicsLayerFirebase = new GraphicsLayer({ title: 'Firebase Points' });
     this.map.add(this.graphicsLayerFirebase);
   }
