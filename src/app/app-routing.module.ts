@@ -18,17 +18,15 @@ export const routes: Routes = [
   },
   {
     path: 'home',
-    component: HomeComponent,
-    canActivate: [AuthGuard]
+    component: HomeComponent
   },
   {
     path: 'map',
-    component: MapComponent,
-    canActivate: [AuthGuard]
+    component: MapComponent
   },
   {
     path: '',
-    redirectTo: 'login',
+    redirectTo: 'home',
     pathMatch: 'full',
   }
 ];
