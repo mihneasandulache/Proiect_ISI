@@ -45,6 +45,7 @@ export class MapComponent implements OnInit, OnDestroy {
   graphicsLayer: esri.GraphicsLayer;
   trailheadsLayer: esri.FeatureLayer;
   tourismLayer: esri.FeatureLayer;
+  countiesLayer: esri.FeatureLayer;
 
   // Tourism attraction filter options (excluding accommodations)
   tourismFilterOptions = [
@@ -245,6 +246,38 @@ export class MapComponent implements OnInit, OnDestroy {
   }
 
   addFeatureLayers() {
+    // Add Romanian Counties layer
+    this.countiesLayer = new FeatureLayer({
+      url: "https://services2.arcgis.com/T4rPchMqQ2Fwj1pR/arcgis/rest/services/Judete_Romania/FeatureServer/0",
+      title: "Romanian Counties",
+      outFields: ["*"],
+      opacity: 0.6,
+      renderer: {
+        type: "simple",
+        symbol: {
+          type: "simple-fill",
+          color: [51, 51, 204, 0.2],
+          outline: {
+            color: [40, 40, 120, 0.8],
+            width: 2
+          }
+        }
+      } as any,
+      popupTemplate: {
+        title: "{JUDET}",
+        content: [{
+          type: "fields",
+          fieldInfos: [
+            {
+              fieldName: "JUDET",
+              label: "County Name"
+            }
+          ]
+        }]
+      } as any
+    });
+    this.map.add(this.countiesLayer, 0);
+
     this.trailheadsLayer = new FeatureLayer({
       url: "https://services3.arcgis.com/GVgbJbqm8hXASVYi/arcgis/rest/services/Trailheads/FeatureServer/0",
       outFields: ['*']
