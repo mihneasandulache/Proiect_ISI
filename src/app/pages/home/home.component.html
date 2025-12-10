@@ -1,4 +1,12 @@
 <div class="home-container">
+  <!-- Header with Logout -->
+  <header class="page-header" *ngIf="currentUser">
+    <div class="user-info">
+      <span class="welcome-text">Welcome, {{ currentUser.username }}</span>
+    </div>
+    <button class="btn-logout" (click)="logout()">Logout</button>
+  </header>
+
   <!-- Hero Section -->
   <section class="hero">
     <div class="hero-content">

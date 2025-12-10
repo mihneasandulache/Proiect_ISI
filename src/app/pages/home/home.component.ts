@@ -1,6 +1,7 @@
 import { Component, OnInit } from "@angular/core";
 import { Router } from "@angular/router";
 import { ApiService, Itinerary } from "../../services/api.service";
+import { AuthService, User } from "../../services/auth.service";
 
 @Component({
     selector: 'app-home',
@@ -10,6 +11,7 @@ import { ApiService, Itinerary } from "../../services/api.service";
 export class HomeComponent implements OnInit {
     featuredItineraries: Itinerary[] = [];
     isLoading = true;
+    currentUser: User | null = null;
 
     features = [
         {
@@ -36,10 +38,14 @@ export class HomeComponent implements OnInit {
 
     constructor(
         private router: Router,
-        private apiService: ApiService
+        private apiService: ApiService,
+        private authService: AuthService
     ) { }
 
     ngOnInit() {
+        this.authService.currentUser.subscribe(user => {
+            this.currentUser = user;
+        });
         this.loadFeaturedItineraries();
     }
 
@@ -66,5 +72,17 @@ export class HomeComponent implements OnInit {
 
     viewItinerary(id: string) {
         this.router.navigate(['/itinerary-feed', id]);
+    }
+
+    logout() {
+        this.authService.logout().subscribe({
+            next: () => {
+                this.router.navigate(['/login']);
+            },
+            error: (err) => {
+                console.error('Logout error:', err);
+                this.router.navigate(['/login']);
+            }
+        });
     }
 }

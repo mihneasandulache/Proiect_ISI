@@ -1,6 +1,12 @@
 <div class="container">
   <div #mapViewNode class="map-view"></div>
 
+  <!-- Header with User Info and Logout -->
+  <div class="map-header esri-widget esri-widget--panel" *ngIf="currentUser">
+    <span class="user-welcome">{{ currentUser.username }}</span>
+    <button class="btn-logout" (click)="logout()">Logout</button>
+  </div>
+
   <!-- Tourism Attraction Filter -->
   <div class="tourism-filter esri-widget esri-widget--panel">
     <label>
