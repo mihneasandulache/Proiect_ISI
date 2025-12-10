@@ -7,6 +7,7 @@ import {
   EventEmitter,
   OnDestroy
 } from "@angular/core";
+import { Router } from "@angular/router";
 
 import esri = __esri; // Esri TypeScript Types
 
@@ -28,6 +29,7 @@ import Polyline from '@arcgis/core/geometry/Polyline';
 import Search from '@arcgis/core/widgets/Search';
 import { FirebaseService } from '../../services/firebase.service';
 import { ApiService } from '../../services/api.service';
+import { AuthService, User } from '../../services/auth.service';
 
 
 @Component({
@@ -67,10 +69,13 @@ export class MapComponent implements OnInit, OnDestroy {
   center: Array<number> = [26.1025, 44.4268];
   basemap = "streets-vector";
   loaded = false;
+  currentUser: User | null = null;
 
   constructor(
     private fb: FirebaseService,
-    private apiService: ApiService
+    private apiService: ApiService,
+    private authService: AuthService,
+    private router: Router
   ) { }
   private firebaseUnsubscribe: (() => void) | null = null;
   private userPosUnsubscribe: (() => void) | null = null;
@@ -80,6 +85,11 @@ export class MapComponent implements OnInit, OnDestroy {
   graphicsLayerFirebase: esri.GraphicsLayer;
 
   ngOnInit() {
+    // Subscribe to current user
+    this.authService.currentUser.subscribe(user => {
+      this.currentUser = user;
+    });
+
     // Load tourism configuration from backend
     this.loadTourismConfig();
 
@@ -365,6 +375,18 @@ export class MapComponent implements OnInit, OnDestroy {
         console.error('Error updating user position to Firebase', err);
       }
     }, 1000);
+  }
+
+  logout() {
+    this.authService.logout().subscribe({
+      next: () => {
+        this.router.navigate(['/login']);
+      },
+      error: (err) => {
+        console.error('Logout error:', err);
+        this.router.navigate(['/login']);
+      }
+    });
   }
 
   ngOnDestroy() {
