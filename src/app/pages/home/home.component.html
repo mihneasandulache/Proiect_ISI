@@ -1,10 +1,21 @@
 <div class="home-container">
-  <!-- Header with Logout -->
+  <!-- Header with Logout for Authenticated Users -->
   <header class="page-header" *ngIf="currentUser">
     <div class="user-info">
       <span class="welcome-text">Welcome, {{ currentUser.username }}</span>
     </div>
     <button class="btn-logout" (click)="logout()">Logout</button>
+  </header>
+
+  <!-- Header with Login/Signup for Guest Users -->
+  <header class="page-header" *ngIf="!currentUser">
+    <div class="user-info">
+      <span class="welcome-text">Romania Tourism</span>
+    </div>
+    <div class="auth-buttons">
+      <button class="btn-login" (click)="goToLogin()">Login</button>
+      <button class="btn-signup" (click)="goToSignup()">Sign Up</button>
+    </div>
   </header>
 
   <!-- Hero Section -->
