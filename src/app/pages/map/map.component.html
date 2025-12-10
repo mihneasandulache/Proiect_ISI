@@ -1,10 +1,19 @@
 <div class="container">
   <div #mapViewNode class="map-view"></div>
 
-  <!-- Header with User Info and Logout -->
+  <!-- Header with User Info and Logout for Authenticated Users -->
   <div class="map-header esri-widget esri-widget--panel" *ngIf="currentUser">
     <span class="user-welcome">{{ currentUser.username }}</span>
     <button class="btn-logout" (click)="logout()">Logout</button>
+  </div>
+
+  <!-- Header with Login/Signup for Guest Users -->
+  <div class="map-header esri-widget esri-widget--panel" *ngIf="!currentUser">
+    <span class="guest-text">Browsing as Guest</span>
+    <div class="auth-buttons">
+      <button class="btn-login" (click)="goToLogin()">Login</button>
+      <button class="btn-signup" (click)="goToSignup()">Sign Up</button>
+    </div>
   </div>
 
   <!-- Tourism Attraction Filter -->

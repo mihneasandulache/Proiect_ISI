@@ -389,6 +389,14 @@ export class MapComponent implements OnInit, OnDestroy {
     });
   }
 
+  goToLogin() {
+    this.router.navigate(['/login']);
+  }
+
+  goToSignup() {
+    this.router.navigate(['/signup']);
+  }
+
   ngOnDestroy() {
     if (this.view) {
       this.view.container = null;

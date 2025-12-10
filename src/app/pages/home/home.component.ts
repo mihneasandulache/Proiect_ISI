@@ -85,4 +85,12 @@ export class HomeComponent implements OnInit {
             }
         });
     }
+
+    goToLogin() {
+        this.router.navigate(['/login']);
+    }
+
+    goToSignup() {
+        this.router.navigate(['/signup']);
+    }
 }
