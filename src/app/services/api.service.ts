@@ -63,6 +63,29 @@ export interface Itinerary {
   routeGeometry?: any;
 }
 
+export interface SurveyPayload {
+  userId: string;
+  travelCompanion: string;
+  durationDays: number | null;
+  budgetEur: number;
+  attractionPreferences: string[];
+}
+
+export interface Review {
+  id?: string;
+  user_id: string;
+  userName: string;
+  attraction_id: string;
+  rating: number;
+  comment: string;
+  created?: string;
+}
+
+export interface RatingSummary {
+  average: number;
+  count: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -127,6 +150,24 @@ export class ApiService {
   }
 
   // ============= REVIEWS =============
+
+  // ============= NOU: REVIEWS/RATING =============
+
+  getAttractionRating(attractionId: string): Observable<RatingSummary> {
+    return this.http.get<RatingSummary>(`${this.apiUrl}/reviews`, {
+      params: { attraction_id: attractionId, action: 'rating' }
+    });
+  }
+
+  getAttractionReviews(attractionId: string): Observable<Review[]> {
+    return this.http.get<Review[]>(`${this.apiUrl}/reviews`, {
+      params: { attraction_id: attractionId }
+    });
+  }
+
+  submitReview(review: Review): Observable<any> {
+    return this.http.post(`${this.apiUrl}/reviews`, review);
+  }
 
   getReviews(filters?: { attraction_id?: string; user_id?: string }): Observable<Review[]> {
     let params = new HttpParams();
@@ -195,5 +236,16 @@ export class ApiService {
   getTourismFilter(tourismType: string): Observable<any> {
     let params = new HttpParams().set('type', tourismType);
     return this.http.get(`${this.apiUrl}/tourism/filter`, { params });
+  }
+
+  // ============= SURVEY/PREFERENCES =============
+
+  /**
+   * Submits user travel preferences to the backend.
+   * @param payload The survey data.
+   * @returns An Observable of the API response.
+   */
+  submitSurvey(payload: SurveyPayload): Observable<any> {
+    return this.http.post(`${this.apiUrl}/survey/preferences`, payload);
   }
 }

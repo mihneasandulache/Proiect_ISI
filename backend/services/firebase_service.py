@@ -165,26 +165,42 @@ class FirebaseService:
 
     # ============= REVIEWS =============
 
+    def create_review(self, data):
+        ref = self.db.child('reviews').push(data)
+        return ref['name']
+
     def get_reviews(self, attraction_id=None, user_id=None):
-        """Get reviews with optional filters"""
+        """Gets reviews with optional filters."""
         ref = self.db.child('reviews')
-
-        if attraction_id:
-            reviews = ref.order_by_child('attraction_id').equal_to(attraction_id).get()
-        elif user_id:
-            reviews = ref.order_by_child('user_id').equal_to(user_id).get()
-        else:
-            reviews = ref.get()
-
-        if not reviews:
-            return []
-
-        result = []
-        for key, value in reviews.items():
-            value['review_id'] = key
-            result.append(value)
-
-        return result
+        
+        query = ref.get()
+        reviews = []
+        
+        for key, value in query.items():
+            value['id'] = key
+            if attraction_id and value.get('attraction_id') == attraction_id:
+                reviews.append(value)
+            elif user_id and value.get('user_id') == user_id:
+                reviews.append(value)
+            elif not attraction_id and not user_id:
+                reviews.append(value)
+                
+        return reviews
+    
+    def calculate_average_rating(self, attraction_id):
+        """Calculates the average rating and count for a specific attraction."""
+        reviews = self.get_reviews(attraction_id=attraction_id)
+        count = len(reviews)
+        
+        if count == 0:
+            return {'average': 0, 'count': 0}
+            
+        total_rating = sum(r.get('rating', 0) for r in reviews)
+        
+        # Asigură-te că ratingul mediu este rotunjit la 1 zecimală
+        average_rating = round(total_rating / count, 1)
+        
+        return {'average': average_rating, 'count': count}
 
     def get_review(self, review_id):
         """Get single review by ID"""
@@ -213,6 +229,21 @@ class FirebaseService:
         ref = self.db.child('reviews').child(review_id)
         ref.delete()
         return True
+    
+    # ============= PREFERENCES / SURVEY =============
+
+    def create_preferences_survey(self, data):
+        """Stores a new user preference survey document in the 'user_preferences' collection, using userId as key."""
+        user_id = data.get('userId')
+        if not user_id:
+            raise ValueError("userId is required for saving preferences.")
+        
+        # Vom folosi ID-ul utilizatorului ca cheie a documentului.
+        # Asta asigură că un utilizator are un singur set de preferințe care este actualizat (overwrite) la fiecare trimitere.
+        ref = self.db.child('user_preferences').child(user_id)
+        ref.set(data)
+        
+        return user_id
     
     # ============= ITINERARIES =============
     

@@ -93,4 +93,7 @@ export class HomeComponent implements OnInit {
     goToSignup() {
         this.router.navigate(['/signup']);
     }
+    goToSurvey() {
+        this.router.navigate(['/survey']);
+    }
 }
