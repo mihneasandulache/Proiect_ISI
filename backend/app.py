@@ -241,9 +241,24 @@ def get_reviews():
     """Get reviews with optional filters"""
     attraction_id = request.args.get('attraction_id')
     user_id = request.args.get('user_id')
+    
+    # Adăugăm un parametru 'action' pentru a permite calculul ratingului mediu
+    action = request.args.get('action') 
 
     try:
+        if attraction_id and action == 'rating':
+            # NOU: Returnează doar ratingul mediu și numărul de recenzii
+            rating_data = fb_service.calculate_average_rating(attraction_id)
+            return jsonify(rating_data), 200
+
         reviews = fb_service.get_reviews(attraction_id=attraction_id, user_id=user_id)
+        
+        # De asemenea, obține informații de bază despre utilizator și atracție
+        for review in reviews:
+            # Obține username-ul pentru afișare (dacă nu e deja stocat)
+            user_data = fb_service.get_user(review.get('user_id'))
+            review['userName'] = user_data.get('username', 'Anonymous') if user_data else 'Unknown User'
+
         return jsonify(reviews), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -260,6 +275,7 @@ def get_review(review_id):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/reviews', methods=['POST'])
+@auth_service.require_auth # Protejăm crearea de recenzii
 def create_review():
     """Create new review"""
     try:
@@ -269,11 +285,19 @@ def create_review():
         if not all(field in data for field in required_fields):
             return jsonify({'error': 'Missing required fields'}), 400
 
-        # Validate rating
+        # Validare rating
         if not (1 <= data['rating'] <= 5):
             return jsonify({'error': 'Rating must be between 1 and 5'}), 400
 
+        # Asigurăm că ID-ul din token se potrivește cu user_id trimis
+        if request.user_id != data['user_id']:
+             return jsonify({'error': 'Authorization mismatch'}), 403
+
         data['created'] = datetime.now().isoformat()
+        
+        user_data = fb_service.get_user(data['user_id'])
+        data['userName'] = user_data.get('username', 'Anonymous') if user_data else 'Unknown User'
+
         review_id = fb_service.create_review(data)
 
         return jsonify({'review_id': review_id, 'message': 'Review created'}), 201
@@ -523,6 +547,39 @@ def get_tourism_filter():
         }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+# ============= SURVEY ENDPOINTS =============
+
+@app.route('/api/survey/preferences', methods=['POST'])
+@auth_service.require_auth
+def submit_preferences():
+    """Submit user travel preferences survey"""
+    try:
+        data = request.json
+        # user_id is already available via require_auth and passed in the payload
+        required_fields = ['userId', 'travelCompanion', 'durationDays', 'budgetEur', 'attractionPreferences']
+
+        if not all(field in data for field in required_fields):
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        # Verify that the token's user_id matches the payload's userId (extra security)
+        if request.user_id != data['userId']:
+            return jsonify({'error': 'Authorization mismatch'}), 403
+
+        data['created'] = datetime.now().isoformat()
+        
+        # Stochează datele sondajului în Firebase
+        survey_id = fb_service.create_preferences_survey(data) 
+
+        return jsonify({
+            'survey_id': survey_id, 
+            'message': 'Preferences saved successfully'
+        }), 201
+
+    except Exception as e:
+        # Puteți înregistra eroarea reală în log-uri
+        print(f"Error submitting survey: {e}")
+        return jsonify({'error': 'Could not save preferences'}), 500
 
 # ============= HEALTH CHECK =============
 

@@ -1,7 +1,7 @@
 import { BrowserModule } from "@angular/platform-browser";
 import { NgModule } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { HttpClientModule } from "@angular/common/http";
+import { HTTP_INTERCEPTORS, HttpClientModule } from "@angular/common/http";
 
 import { AppComponent } from "./app.component";
 import { MapComponent } from "./pages/map/map.component";
@@ -20,13 +20,25 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatListModule } from '@angular/material/list';
 import { FlexLayoutModule } from '@angular/flex-layout';
 
+import { SurveyComponent } from './pages/surveycomponent/survey.component';
+import { AuthInterceptor } from './interceptors/auth.interceptors';
+import { CommonModule } from '@angular/common';
+
+import { RouterModule } from '@angular/router';
+import { AttractionReviewsComponent } from './pages/attraction-reviews/attraction-review.component';
+import { AddReviewComponent } from './pages/add-review/add-review.component';
+
+
 @NgModule({
   declarations: [
     AppComponent,
     HomeComponent,
     MapComponent,
     LoginComponent,
-    SignupComponent
+    SignupComponent,
+    SurveyComponent,
+    AttractionReviewsComponent,
+    AddReviewComponent
   ],
   imports: [
     BrowserModule,
@@ -37,13 +49,20 @@ import { FlexLayoutModule } from '@angular/flex-layout';
     MatButtonModule,
     MatDividerModule,
     MatListModule,
-    FlexLayoutModule
+    FlexLayoutModule,
+    CommonModule,
+    RouterModule
   ],
   providers: [
     FirebaseService,
     ApiService,
     AuthService,
-    AuthGuard
+    AuthGuard,
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: AuthInterceptor,
+      multi: true
+    }
   ],
   bootstrap: [AppComponent]
 })

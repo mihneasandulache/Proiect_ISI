@@ -1,3 +1,5 @@
+/* map.component.scss */
+
 /* import the required JSAPI css */
 // @import url('https://js.arcgis.com/4.12/esri/css/main.css');
 
@@ -14,7 +16,8 @@
 
 /* Map view styling */
 .map-view {
-  flex: 1; /* Takes up the remaining space next to the sidebar */
+  flex: 1;
+  /* Takes up the remaining space next to the sidebar */
   height: 100%;
 }
 
@@ -28,7 +31,7 @@
   background: rgba(255, 255, 255, 0.9);
   padding: 10px;
   border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .map-header {
@@ -41,7 +44,8 @@
   align-items: center;
   gap: 12px;
 
-  .user-welcome, .guest-text {
+  .user-welcome,
+  .guest-text {
     font-weight: 600;
     color: #333;
     font-size: 14px;
@@ -152,3 +156,48 @@
     }
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* STILURI POPUP ARCGIS */
+/* -------------------------------------------------------------------------- */
+:host ::ng-deep .esri-popup__content {
+
+  .popup-review-controls {
+    padding-top: 15px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+    margin-bottom: 5px;
+
+    .review-stats {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  }
+}
+
+::ng-deep .esri-popup .btn {
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-block;
+  text-decoration: none !important;
+  text-align: center;
+  line-height: normal;
+  border: none;
+}
+
+::ng-deep .esri-popup .btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white !important;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+

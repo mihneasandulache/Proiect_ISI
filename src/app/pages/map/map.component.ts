@@ -7,7 +7,6 @@ import {
   EventEmitter,
   OnDestroy
 } from "@angular/core";
-import { Router } from "@angular/router";
 
 import esri = __esri; // Esri TypeScript Types
 
@@ -29,6 +28,7 @@ import Polyline from '@arcgis/core/geometry/Polyline';
 import Search from '@arcgis/core/widgets/Search';
 import { FirebaseService } from '../../services/firebase.service';
 import { ApiService } from '../../services/api.service';
+import { Router } from '@angular/router';
 import { AuthService, User } from '../../services/auth.service';
 
 
@@ -47,7 +47,6 @@ export class MapComponent implements OnInit, OnDestroy {
   graphicsLayer: esri.GraphicsLayer;
   trailheadsLayer: esri.FeatureLayer;
   tourismLayer: esri.FeatureLayer;
-  countiesLayer: esri.FeatureLayer;
 
   // Tourism attraction filter options (excluding accommodations)
   tourismFilterOptions = [
@@ -69,7 +68,7 @@ export class MapComponent implements OnInit, OnDestroy {
   center: Array<number> = [26.1025, 44.4268];
   basemap = "streets-vector";
   loaded = false;
-  currentUser: User | null = null;
+  currentUser: User | null = null; //
 
   constructor(
     private fb: FirebaseService,
@@ -85,12 +84,11 @@ export class MapComponent implements OnInit, OnDestroy {
   graphicsLayerFirebase: esri.GraphicsLayer;
 
   ngOnInit() {
-    // Subscribe to current user
-    this.authService.currentUser.subscribe(user => {
+    // Load tourism configuration from backend
+    this.authService.currentUser.subscribe(user => { //
       this.currentUser = user;
     });
 
-    // Load tourism configuration from backend
     this.loadTourismConfig();
 
     this.initializeMap().then(() => {
@@ -256,38 +254,6 @@ export class MapComponent implements OnInit, OnDestroy {
   }
 
   addFeatureLayers() {
-    // Add Romanian Counties layer
-    this.countiesLayer = new FeatureLayer({
-      url: "https://services2.arcgis.com/T4rPchMqQ2Fwj1pR/arcgis/rest/services/Judete_Romania/FeatureServer/0",
-      title: "Romanian Counties",
-      outFields: ["*"],
-      opacity: 0.6,
-      renderer: {
-        type: "simple",
-        symbol: {
-          type: "simple-fill",
-          color: [51, 51, 204, 0.2],
-          outline: {
-            color: [40, 40, 120, 0.8],
-            width: 2
-          }
-        }
-      } as any,
-      popupTemplate: {
-        title: "{JUDET}",
-        content: [{
-          type: "fields",
-          fieldInfos: [
-            {
-              fieldName: "JUDET",
-              label: "County Name"
-            }
-          ]
-        }]
-      } as any
-    });
-    this.map.add(this.countiesLayer, 0);
-
     this.trailheadsLayer = new FeatureLayer({
       url: "https://services3.arcgis.com/GVgbJbqm8hXASVYi/arcgis/rest/services/Trailheads/FeatureServer/0",
       outFields: ['*']
@@ -322,6 +288,20 @@ export class MapComponent implements OnInit, OnDestroy {
             <p><strong>Opening Hours:</strong> {opening_hours}</p>
             <p><strong>Website:</strong> {website}</p>
             <p><strong>Phone:</strong> {phone}</p>
+          </div>
+          <div class="popup-review-controls">
+            <div class="review-stats">
+            </div>
+            <div class="review-actions">
+              <a 
+                href="#/attractions/{OBJECTID}/reviews?name={name}" 
+                class="btn btn-primary" 
+                data-attraction-id="{OBJECTID}"
+                style="color: white; text-decoration: none;"
+              >
+                View Reviews
+              </a>
+            </div>
           </div>
         `
       }
@@ -377,26 +357,6 @@ export class MapComponent implements OnInit, OnDestroy {
     }, 1000);
   }
 
-  logout() {
-    this.authService.logout().subscribe({
-      next: () => {
-        this.router.navigate(['/login']);
-      },
-      error: (err) => {
-        console.error('Logout error:', err);
-        this.router.navigate(['/login']);
-      }
-    });
-  }
-
-  goToLogin() {
-    this.router.navigate(['/login']);
-  }
-
-  goToSignup() {
-    this.router.navigate(['/signup']);
-  }
-
   ngOnDestroy() {
     if (this.view) {
       this.view.container = null;
@@ -413,5 +373,24 @@ export class MapComponent implements OnInit, OnDestroy {
       clearInterval(this.centerSyncTimer);
       this.centerSyncTimer = null;
     }
+  }
+  logout() {
+    this.authService.logout().subscribe({ //
+      next: () => {
+        this.router.navigate(['/login']); //
+      },
+      error: (err) => {
+        console.error('Logout error:', err);
+        this.router.navigate(['/login']);
+      }
+    });
+  }
+
+  goToLogin() {
+    this.router.navigate(['/login']); //
+  }
+
+  goToSignup() {
+    this.router.navigate(['/signup']); //
   }
 }
