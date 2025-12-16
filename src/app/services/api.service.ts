@@ -86,6 +86,17 @@ export interface RatingSummary {
   count: number;
 }
 
+
+// Aceasta este structura de date pe care o așteptăm de la backend 
+export interface RouteResult {
+    route: Attraction[];
+    total_distance: number;
+    segments: any[];
+    start_location: { latitude: number; longitude: number; name: string };
+    algorithm: 'nearest_neighbor' | 'arcgis' | 'mixed';
+    route_geometry: number[][]; 
+}
+
 @Injectable({
   providedIn: 'root'
 })
