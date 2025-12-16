@@ -17,6 +17,39 @@
   </div>
 
   <!-- Tourism Attraction Filter -->
+  <div class="route-planner-panel esri-widget esri-widget--panel">
+    <h2>Planificator Traseu</h2>
+    <p class="helper-text">Adăugați locațiile concrete pe care doriți să le vizitați în România:</p>
+  
+    <div class="stops-list">
+      <p *ngIf="selectedStops.length === 0" class="placeholder">
+        Nicio locație adăugată. Utilizați harta/căutarea pentru a selecta puncte.
+      </p>
+      <div *ngFor="let stop of selectedStops; let i = index" class="stop-item">
+        <span>{{ i + 1 }}. {{ stop.name }}</span>
+        <button class="btn-remove" (click)="removeStop(i)">×</button>
+      </div>
+    </div>
+  
+    <div class="route-actions">
+      <button class="btn-calculate" [disabled]="selectedStops.length < 2 || routeLoading" (click)="calculateRoute()">
+        <span *ngIf="!routeLoading">
+          <i class="fas fa-route"></i>
+          Calculează Traseul Optim
+        </span>
+        <span *ngIf="routeLoading">
+          <i class="fas fa-spinner fa-spin"></i>
+          Se Calculează...
+        </span>
+      </button>
+  
+      <button class="btn-clear" [disabled]="selectedStops.length === 0" (click)="clearAll()">
+        Șterge Tot
+      </button>
+    </div>
+  </div>
+  
+  
   <div class="tourism-filter esri-widget esri-widget--panel">
     <label>
       Filter Tourist Attractions:

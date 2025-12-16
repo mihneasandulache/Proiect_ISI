@@ -27,7 +27,7 @@ import Polyline from '@arcgis/core/geometry/Polyline';
 
 import Search from '@arcgis/core/widgets/Search';
 import { FirebaseService } from '../../services/firebase.service';
-import { ApiService } from '../../services/api.service';
+import { ApiService, Attraction } from '../../services/api.service';
 import { Router } from '@angular/router';
 import { AuthService, User } from '../../services/auth.service';
 
@@ -70,6 +70,11 @@ export class MapComponent implements OnInit, OnDestroy {
   basemap = "streets-vector";
   loaded = false;
   currentUser: User | null = null; //
+  selectedStops: Attraction[] = [];
+  routeLoading: boolean = false; 
+  totalDistance: number = 0;
+
+  routeGraphicsLayer: esri.GraphicsLayer;
 
   constructor(
     private fb: FirebaseService,
@@ -121,6 +126,11 @@ export class MapComponent implements OnInit, OnDestroy {
 
       this.addFeatureLayers();
       this.addGraphicsLayer();
+      this.routeGraphicsLayer = new GraphicsLayer({
+        id: "route-layer",
+        title: "Calculated Route Stops"
+      });
+      this.map.add(this.routeGraphicsLayer);
       this.addGraphicElements();
 
       const mapViewProperties = {
@@ -154,6 +164,31 @@ export class MapComponent implements OnInit, OnDestroy {
     });
 
     this.view.ui.add(search, "top-right");
+    search.on('select-result', (event) => {
+      const result = event.result;
+      const geometry = result.feature.geometry as esri.Point;
+
+      if (geometry && geometry.type === 'point') {
+
+        const newAttractionId = `search_${Date.now()}`;
+
+        const newStop: Attraction = {
+          attraction_id: newAttractionId,
+          name: result.name || 'Locație Căutată',
+          location: {
+            latitude: geometry.latitude,
+            longitude: geometry.longitude
+          },
+          description: 'Adăugat din căutare',
+          type: 'search',
+          city_id: 'unknown'
+        };
+
+        this.addStopToRoute(newStop);
+
+        search.clear();
+      }
+    });
   }
 
   filterTourismAttractions(filterValue: string) {
@@ -319,6 +354,13 @@ export class MapComponent implements OnInit, OnDestroy {
             </div>
             <div class="review-actions">
               <a 
+                href="#" 
+                class="btn btn-primary" 
+                style="color: white; text-decoration: none; margin-right: 8px;"
+              >
+                Visit
+              </a>
+              <a 
                 href="#/attractions/{OBJECTID}/reviews?name={name}" 
                 class="btn btn-primary" 
                 data-attraction-id="{OBJECTID}"
@@ -418,4 +460,75 @@ export class MapComponent implements OnInit, OnDestroy {
   goToSignup() {
     this.router.navigate(['/signup']); //
   }
+  /**
+ * Șterge un punct de oprire din listă.
+ */
+  removeStop(index: number): void {
+    this.selectedStops.splice(index, 1);
+    this.redrawStopGraphics();
+  }
+
+  /**
+   * Șterge toate punctele de oprire.
+   */
+  clearAll(): void {
+    this.selectedStops = [];
+    this.routeGraphicsLayer.removeAll();
+    this.totalDistance = 0;
+  }
+
+  calculateRoute(): void {
+    if (this.selectedStops.length < 2) {
+      alert('Vă rugăm să selectați cel puțin 2 locații pentru a calcula ruta.');
+      return;
+    }
+
+    // **CERINȚA DVS.: SIMULARE ȘI FĂRĂ APEL API**
+    this.routeLoading = true;
+    console.log("Simulare: Functia de calcul a rutei este activa, dar nu executa apelul API.");
+
+    setTimeout(() => {
+      this.routeLoading = false;
+      alert("Butonul UI funcționează. Funcționalitatea de rutare (apelul API) nu este activă.");
+    }, 1500);
+  }
+
+  private drawStopGraphic(stop: Attraction, order: number): void {
+    const point = new Point({
+      latitude: stop.location.latitude,
+      longitude: stop.location.longitude
+    });
+
+    const markerSymbol = {
+      type: "simple-marker",
+      style: "circle",
+      color: [102, 126, 234, 0.9],
+      size: 8
+    } as esri.SimpleMarkerSymbolProperties;
+
+    const stopGraphic = new Graphic({
+      geometry: point,
+      symbol: markerSymbol,
+      attributes: stop,
+      popupTemplate: {
+        title: `${order}. ${stop.name}`,
+        content: `Locație selectată`
+      }
+    });
+    this.routeGraphicsLayer.add(stopGraphic);
+  }
+
+  private redrawStopGraphics(): void {
+    this.routeGraphicsLayer.removeAll();
+    this.selectedStops.forEach((stop, i) => this.drawStopGraphic(stop, i + 1));
+  }
+
+  addStopToRoute(attraction: Attraction): void {
+    const exists = this.selectedStops.some(s => s.attraction_id === attraction.attraction_id);
+    if (!exists) {
+      this.selectedStops.push(attraction);
+      this.redrawStopGraphics();
+    }
+  }
+  
 }
