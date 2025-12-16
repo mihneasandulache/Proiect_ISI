@@ -138,13 +138,119 @@ class RouteOptimizer:
         # Build ordered route
         ordered_route = [attractions[idx] for idx in route_order]
 
+        # Apply 2-Opt optimization to improve the route
+        optimized_route = self.two_opt_optimize(ordered_route, start_location)
+
+        # Recalculate distance and segments for optimized route
+        total_distance = 0
+        segments = []
+
+        if start_location:
+            current_lat = start_location['latitude']
+            current_lon = start_location['longitude']
+            current_name = start_location['name']
+        else:
+            current_lat = optimized_route[0]['latitude']
+            current_lon = optimized_route[0]['longitude']
+            current_name = optimized_route[0]['name']
+
+        start_idx = 0 if start_location else 1
+
+        for attraction in optimized_route[start_idx:]:
+            distance = self.calculate_distance(
+                current_lat,
+                current_lon,
+                attraction['latitude'],
+                attraction['longitude']
+            )
+            segments.append({
+                'from': current_name,
+                'to': attraction['name'],
+                'distance_km': round(distance, 2)
+            })
+            total_distance += distance
+            current_lat = attraction['latitude']
+            current_lon = attraction['longitude']
+            current_name = attraction['name']
+
         return {
-            'route': ordered_route,
+            'route': optimized_route,
             'total_distance': round(total_distance, 2),
             'segments': segments,
             'start_location': start_location,
-            'algorithm': 'nearest_neighbor'
+            'algorithm': 'nearest_neighbor_with_2opt'
         }
+
+    def two_opt_optimize(self, route: List[Dict], start_location: Dict = None) -> List[Dict]:
+        """
+        Improve route using 2-Opt local search algorithm
+        Eliminates route crossings by reversing segments when it reduces total distance
+
+        Args:
+            route: Initial route to optimize
+            start_location: Optional starting location
+
+        Returns:
+            Optimized route
+        """
+        if len(route) <= 2:
+            return route
+
+        route = list(route)  # Make a copy to avoid modifying original
+        improved = True
+
+        while improved:
+            improved = False
+
+            for i in range(len(route) - 1):
+                for j in range(i + 2, len(route)):
+                    # Calculate distance of current edge pair
+                    # Edge 1: from point before i to point i
+                    if i == 0 and start_location:
+                        edge1_start_lat = start_location['latitude']
+                        edge1_start_lon = start_location['longitude']
+                    elif i == 0:
+                        # Skip if no start location and i=0 (no previous point)
+                        continue
+                    else:
+                        edge1_start_lat = route[i - 1]['latitude']
+                        edge1_start_lon = route[i - 1]['longitude']
+
+                    edge1_end_lat = route[i]['latitude']
+                    edge1_end_lon = route[i]['longitude']
+
+                    # Edge 2: from point j to point after j (if exists)
+                    if j == len(route) - 1:
+                        # Skip if j is last point (no next point)
+                        continue
+
+                    edge2_start_lat = route[j]['latitude']
+                    edge2_start_lon = route[j]['longitude']
+                    edge2_end_lat = route[j + 1]['latitude']
+                    edge2_end_lon = route[j + 1]['longitude']
+
+                    # Calculate current distance
+                    current_distance = (
+                        self.calculate_distance(edge1_start_lat, edge1_start_lon, edge1_end_lat, edge1_end_lon) +
+                        self.calculate_distance(edge2_start_lat, edge2_start_lon, edge2_end_lat, edge2_end_lon)
+                    )
+
+                    # Calculate distance after reversing segment between i and j
+                    new_distance = (
+                        self.calculate_distance(edge1_start_lat, edge1_start_lon, edge2_start_lat, edge2_start_lon) +
+                        self.calculate_distance(edge1_end_lat, edge1_end_lon, edge2_end_lat, edge2_end_lon)
+                    )
+
+                    # If new distance is better, reverse the segment
+                    if new_distance < current_distance:
+                        route[i:j + 1] = reversed(route[i:j + 1])
+                        improved = True
+                        break
+
+                if improved:
+                    break
+
+        return route
 
     def calculate_route_geometry(self, route: List[Dict], start_location: Dict = None) -> List[List[float]]:
         """
