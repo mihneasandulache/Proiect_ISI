@@ -259,4 +259,20 @@ export class ApiService {
   submitSurvey(payload: SurveyPayload): Observable<any> {
     return this.http.post(`${this.apiUrl}/survey/preferences`, payload);
   }
+
+  // ============= ROUTE CALCULATION =============
+
+  /**
+   * Calculate optimal route using backend algorithm
+   * @param attractions List of attractions to visit
+   * @param startLocation Optional starting location
+   * @returns Observable with route result including optimized order and distance
+   */
+  calculateOptimalRoute(attractions: Attraction[], startLocation?: { latitude: number; longitude: number; name?: string }): Observable<RouteResult> {
+    const payload = {
+      attractions: attractions,
+      start_location: startLocation
+    };
+    return this.http.post<RouteResult>(`${this.apiUrl}/routes/calculate`, payload);
+  }
 }

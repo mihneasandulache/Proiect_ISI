@@ -355,4 +355,138 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
+/* Directions Panel Styling */
+.directions-panel {
+  position: absolute;
+  top: 15px;
+  right: 380px;
+  width: 350px;
+  max-height: calc(100vh - 100px);
+  z-index: 1000;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+
+  .directions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 4px 4px 0 0;
+
+    h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .btn-close-directions {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 28px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s;
+
+      &:hover {
+        transform: scale(1.1);
+      }
+    }
+  }
+
+  .directions-summary {
+    padding: 16px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+
+    .summary-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      i {
+        color: #667eea;
+        width: 20px;
+      }
+
+      span {
+        font-size: 14px;
+        color: #333;
+
+        strong {
+          color: #667eea;
+        }
+      }
+    }
+  }
+
+  .directions-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    background-color: white;
+
+    .direction-item {
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+      border-bottom: 1px solid #e9ecef;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background-color: #f8f9fa;
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .direction-number {
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 14px;
+      }
+
+      .direction-content {
+        flex: 1;
+
+        .direction-text {
+          font-size: 14px;
+          color: #333;
+          margin-bottom: 4px;
+          line-height: 1.4;
+        }
+
+        .direction-distance {
+          font-size: 12px;
+          color: #6c757d;
+          font-style: italic;
+        }
+      }
+    }
+  }
+}
 

@@ -26,6 +26,9 @@ import Polygon from '@arcgis/core/geometry/Polygon';
 import Polyline from '@arcgis/core/geometry/Polyline';
 
 import Search from '@arcgis/core/widgets/Search';
+import * as route from '@arcgis/core/rest/route';
+import RouteParameters from '@arcgis/core/rest/support/RouteParameters';
+import FeatureSet from '@arcgis/core/rest/support/FeatureSet';
 import { FirebaseService } from '../../services/firebase.service';
 import { ApiService, Attraction } from '../../services/api.service';
 import { Router } from '@angular/router';
@@ -71,8 +74,13 @@ export class MapComponent implements OnInit, OnDestroy {
   loaded = false;
   currentUser: User | null = null; //
   selectedStops: Attraction[] = [];
-  routeLoading: boolean = false; 
+  routeLoading: boolean = false;
   totalDistance: number = 0;
+
+  // Directions panel
+  showDirections: boolean = false;
+  directions: any[] = [];
+  routeSummary: { distance: string, time: string } | null = null;
 
   routeGraphicsLayer: esri.GraphicsLayer;
 
@@ -483,14 +491,193 @@ export class MapComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // **CERINȚA DVS.: SIMULARE ȘI FĂRĂ APEL API**
     this.routeLoading = true;
-    console.log("Simulare: Functia de calcul a rutei este activa, dar nu executa apelul API.");
+    console.log("Calculare traseu optim...");
 
-    setTimeout(() => {
+    // Transform attractions to match backend expected format
+    const transformedAttractions = this.selectedStops.map(stop => ({
+      ...stop,
+      latitude: stop.location.latitude,
+      longitude: stop.location.longitude
+    }));
+
+    // Call backend to calculate optimal route order
+    this.apiService.calculateOptimalRoute(transformedAttractions).subscribe({
+      next: (result) => {
+        console.log('Route calculation result:', result);
+
+        // Transform result back to frontend format
+        const transformedRoute = result.route.map((stop: any) => ({
+          ...stop,
+          location: {
+            latitude: stop.latitude,
+            longitude: stop.longitude
+          }
+        }));
+
+        // Update the selected stops with the optimized order
+        this.selectedStops = transformedRoute;
+        this.totalDistance = result.total_distance;
+
+        // Redraw the stops in the new order
+        this.redrawStopGraphics();
+
+        // Now calculate the actual route using ArcGIS routing service
+        this.calculateArcGISRoute(this.selectedStops);
+      },
+      error: (error) => {
+        console.error('Error calculating route:', error);
+        this.routeLoading = false;
+        alert('Eroare la calcularea traseului. Vă rugăm să încercați din nou.');
+      }
+    });
+  }
+
+  private calculateArcGISRoute(stops: Attraction[]): void {
+    // ArcGIS World Routing Service URL
+    const routeServiceUrl = "https://route-api.arcgis.com/arcgis/rest/services/World/Route/NAServer/Route_World";
+
+    // Create route stops as graphics
+    const routeStops = stops.map(stop => {
+      return new Graphic({
+        geometry: new Point({
+          longitude: stop.location.longitude,
+          latitude: stop.location.latitude
+        }),
+        attributes: {
+          Name: stop.name
+        }
+      });
+    });
+
+    // Set up route parameters
+    const routeParams = new RouteParameters({
+      stops: new FeatureSet({
+        features: routeStops
+      }),
+      returnDirections: true,
+      directionsLanguage: 'ro', // Romanian language for directions
+      directionsLengthUnits: 'kilometers',
+      outSpatialReference: this.view.spatialReference
+    });
+
+    // Solve the route
+    route.solve(routeServiceUrl, routeParams).then((result: any) => {
+      console.log('ArcGIS Route result:', result);
+
+      // Clear previous route
+      this.routeGraphicsLayer.graphics.forEach((graphic) => {
+        if (graphic.geometry.type === 'polyline') {
+          this.routeGraphicsLayer.remove(graphic);
+        }
+      });
+
+      // Display the route on the map
+      if (result.routeResults && result.routeResults.length > 0) {
+        const routeResult = result.routeResults[0];
+
+        // Draw the route line
+        const routeSymbol = {
+          type: "simple-line",
+          color: [51, 122, 183, 0.8],
+          width: 4
+        };
+
+        const routeGraphic = new Graphic({
+          geometry: routeResult.route.geometry,
+          symbol: routeSymbol
+        });
+
+        this.routeGraphicsLayer.add(routeGraphic);
+
+        // Get total distance from ArcGIS
+        const totalKm = (routeResult.route.attributes.Total_Kilometers || 0).toFixed(2);
+        const totalTime = (routeResult.route.attributes.Total_TravelTime || 0).toFixed(0); // in minutes
+
+        this.totalDistance = parseFloat(totalKm);
+
+        // Set route summary
+        this.routeSummary = {
+          distance: totalKm,
+          time: totalTime
+        };
+
+        // Display directions
+        if (routeResult.directions) {
+          this.displayDirections(routeResult.directions);
+        }
+
+        this.routeLoading = false;
+        alert(`Traseu calculat!\nDistanță: ${totalKm} km\nTimp estimat: ${totalTime} minute\n\nVezi panoul de indicații pentru detalii.`);
+      } else {
+        this.routeLoading = false;
+        alert('Nu s-a putut calcula traseul pe drumuri. Se afișează distanța directă.');
+      }
+    }).catch((error: any) => {
+      console.error('ArcGIS routing error:', error);
       this.routeLoading = false;
-      alert("Butonul UI funcționează. Funcționalitatea de rutare (apelul API) nu este activă.");
-    }, 1500);
+
+      // Fallback to simple line if routing service fails
+      alert('Nu s-a putut folosi serviciul de rutare ArcGIS. Se afișează distanța directă: ' + this.totalDistance.toFixed(2) + ' km');
+    });
+  }
+
+  private displayDirections(directions: any): void {
+    console.log('Route Directions:');
+    console.log('=================');
+
+    if (directions.features && directions.features.length > 0) {
+      // Extract and format directions
+      this.directions = directions.features.map((feature: any) => ({
+        text: feature.attributes.text,
+        length: (feature.attributes.length || 0).toFixed(2)
+      }));
+
+      // Log to console as well
+      this.directions.forEach((direction, index) => {
+        console.log(`${index + 1}. ${direction.text} (${direction.length} km)`);
+      });
+
+      console.log('=================');
+      console.log('Total Features:', this.directions.length);
+
+      // Show the directions panel
+      this.showDirections = true;
+    }
+  }
+
+  closeDirections(): void {
+    this.showDirections = false;
+  }
+
+  private drawRouteLine(routeGeometry: number[][]): void {
+    // Clear any existing route lines
+    this.routeGraphicsLayer.graphics.forEach((graphic) => {
+      if (graphic.geometry.type === 'polyline') {
+        this.routeGraphicsLayer.remove(graphic);
+      }
+    });
+
+    // Convert route geometry to Polyline
+    const paths = routeGeometry.map(coord => [coord[1], coord[0]]); // [lng, lat]
+
+    const polyline = new Polyline({
+      paths: [paths]
+    });
+
+    const lineSymbol = {
+      type: "simple-line",
+      color: [51, 122, 183, 0.8], // Blue color
+      width: 4
+    } as any;
+
+    const routeGraphic = new Graphic({
+      geometry: polyline,
+      symbol: lineSymbol
+    });
+
+    this.routeGraphicsLayer.add(routeGraphic);
+    console.log('Route line drawn on map');
   }
 
   private drawStopGraphic(stop: Attraction, order: number): void {
