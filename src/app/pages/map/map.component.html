@@ -69,4 +69,33 @@
       </select>
     </label>
   </div>
+
+  <!-- Directions Panel -->
+  <div class="directions-panel esri-widget esri-widget--panel" *ngIf="showDirections">
+    <div class="directions-header">
+      <h3>Indicații de Navigare</h3>
+      <button class="btn-close-directions" (click)="closeDirections()">×</button>
+    </div>
+
+    <div class="directions-summary" *ngIf="routeSummary">
+      <div class="summary-item">
+        <i class="fas fa-road"></i>
+        <span>Distanță: <strong>{{ routeSummary.distance }} km</strong></span>
+      </div>
+      <div class="summary-item">
+        <i class="fas fa-clock"></i>
+        <span>Timp: <strong>{{ routeSummary.time }} minute</strong></span>
+      </div>
+    </div>
+
+    <div class="directions-list">
+      <div class="direction-item" *ngFor="let direction of directions; let i = index">
+        <div class="direction-number">{{ i + 1 }}</div>
+        <div class="direction-content">
+          <div class="direction-text">{{ direction.text }}</div>
+          <div class="direction-distance">{{ direction.length }} km</div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
