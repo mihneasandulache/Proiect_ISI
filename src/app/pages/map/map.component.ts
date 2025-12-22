@@ -158,6 +158,7 @@ export class MapComponent implements OnInit, OnDestroy {
       console.log("ArcGIS map loaded");
       this.setupFirebaseSync();
       this.addSearchWidget();
+      this.setupTourismLayerClickHandler();
       return this.view;
     } catch (error) {
       console.error("Error loading the map: ", error);
@@ -172,30 +173,57 @@ export class MapComponent implements OnInit, OnDestroy {
     });
 
     this.view.ui.add(search, "top-right");
-    search.on('select-result', (event) => {
-      const result = event.result;
-      const geometry = result.feature.geometry as esri.Point;
 
-      if (geometry && geometry.type === 'point') {
+    // Search will navigate to location and show popup
+    // User can then click on the marker to add it to route
+  }
 
-        const newAttractionId = `search_${Date.now()}`;
+  setupTourismLayerClickHandler(): void {
+    // Add click handler to tourism layer to add attractions to route
+    this.view.on('click', (event) => {
+      this.view.hitTest(event).then((response) => {
+        // Check if we clicked on a tourism attraction
+        const tourismHit = response.results.find((result: any) => {
+          return result.graphic && result.graphic.layer === this.tourismLayer;
+        });
 
-        const newStop: Attraction = {
-          attraction_id: newAttractionId,
-          name: result.name || 'Locație Căutată',
-          location: {
-            latitude: geometry.latitude,
-            longitude: geometry.longitude
-          },
-          description: 'Adăugat din căutare',
-          type: 'search',
-          city_id: 'unknown'
-        };
+        if (tourismHit && (tourismHit as any).graphic) {
+          const graphic = (tourismHit as any).graphic;
+          const attributes = graphic.attributes;
+          const geometry = graphic.geometry as esri.Point;
 
-        this.addStopToRoute(newStop);
+          // Extract attraction data
+          const attractionId = attributes.OBJECTID || `tourism_${Date.now()}`;
+          const attractionName = attributes.name || 'Unknown Attraction';
+          const tourism = attributes.tourism || '';
+          const description = attributes.description || '';
 
-        search.clear();
-      }
+          // Get coordinates from geometry
+          if (geometry && geometry.latitude && geometry.longitude) {
+            const newStop: Attraction = {
+              attraction_id: attractionId.toString(),
+              name: attractionName,
+              location: {
+                latitude: geometry.latitude,
+                longitude: geometry.longitude
+              },
+              description: description,
+              type: tourism,
+              city_id: 'unknown'
+            };
+
+            // Check if already added
+            const exists = this.selectedStops.some(s => s.attraction_id === newStop.attraction_id);
+
+            if (!exists) {
+              this.addStopToRoute(newStop);
+              console.log('Attraction added to route:', attractionName);
+            } else {
+              console.log('Attraction already in route:', attractionName);
+            }
+          }
+        }
+      });
     });
   }
 
@@ -361,16 +389,9 @@ export class MapComponent implements OnInit, OnDestroy {
             <div class="review-stats">
             </div>
             <div class="review-actions">
-              <a 
-                href="#" 
-                class="btn btn-primary" 
-                style="color: white; text-decoration: none; margin-right: 8px;"
-              >
-                Visit
-              </a>
-              <a 
-                href="#/attractions/{OBJECTID}/reviews?name={name}" 
-                class="btn btn-primary" 
+              <a
+                href="#/attractions/{OBJECTID}/reviews?name={name}"
+                class="btn btn-primary"
                 data-attraction-id="{OBJECTID}"
                 style="color: white; text-decoration: none;"
               >
