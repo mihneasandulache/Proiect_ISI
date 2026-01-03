@@ -48,6 +48,10 @@ class RouteOptimizer:
                 'start_location': start_location,
                 'algorithm': 'nearest_neighbor'
             }
+        
+        if start_location:
+            current_lat = start_location['latitude']
+            current_lon = start_location['longitude']
 
         if len(attractions) == 1:
             # Single attraction case
