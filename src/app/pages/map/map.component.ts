@@ -519,6 +519,7 @@ export class MapComponent implements OnInit, OnDestroy {
     console.log("Itinerariul a fost șters complet.");
   }
 
+  //test
   public setAsStart(index: number): void {
     const selected = this.selectedStops[index];
 
