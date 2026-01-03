@@ -76,6 +76,12 @@ export class MapComponent implements OnInit, OnDestroy {
   selectedStops: Attraction[] = [];
   routeLoading: boolean = false;
   totalDistance: number = 0;
+  startLocation: Attraction | any = null;
+
+  // Directions panel
+  showDirections: boolean = false;
+  directions: any[] = [];
+  routeSummary: { distance: string, time: string } | null = null;
 
   // Directions panel
   showDirections: boolean = false;
@@ -168,35 +174,23 @@ export class MapComponent implements OnInit, OnDestroy {
   addSearchWidget() {
     const search = new Search({
       view: this.view,
-      popupEnabled: true
+      popupEnabled: true,
+      includeDefaultSources: false,
+      sources: [
+        {
+          layer: this.tourismLayer,
+          searchFields: ["name"],
+          displayField: "name",
+          exactMatch: false,
+          outFields: ["*"],
+          name: "Atracții Turistice România",
+          placeholder: "Caută o atracție (ex: Castelul Bran)",
+          popupTemplate: this.tourismLayer.popupTemplate
+        } as any
+      ]
     });
 
     this.view.ui.add(search, "top-right");
-    search.on('select-result', (event) => {
-      const result = event.result;
-      const geometry = result.feature.geometry as esri.Point;
-
-      if (geometry && geometry.type === 'point') {
-
-        const newAttractionId = `search_${Date.now()}`;
-
-        const newStop: Attraction = {
-          attraction_id: newAttractionId,
-          name: result.name || 'Locație Căutată',
-          location: {
-            latitude: geometry.latitude,
-            longitude: geometry.longitude
-          },
-          description: 'Adăugat din căutare',
-          type: 'search',
-          city_id: 'unknown'
-        };
-
-        this.addStopToRoute(newStop);
-
-        search.clear();
-      }
-    });
   }
 
   filterTourismAttractions(filterValue: string) {
@@ -345,40 +339,76 @@ export class MapComponent implements OnInit, OnDestroy {
     this.tourismLayer = new FeatureLayer({
       url: "https://services-eu1.arcgis.com/zci5bUiJ8olAal7N/arcgis/rest/services/OSM_EU_Tourism/FeatureServer/0",
       title: "Romanian Tourist Attractions",
-      outFields: ["name", "tourism", "historic", "amenity", "description", "opening_hours", "website", "phone"],
+      outFields: ["*"],
       definitionExpression: `name IS NOT NULL AND ${excludeAccommodation}`,
       popupTemplate: {
         title: "{name}",
-        content: `
-          <div style="padding: 10px;">
-            <p><strong>Type:</strong> {tourism} {historic} {amenity}</p>
-            <p><strong>Description:</strong> {description}</p>
-            <p><strong>Opening Hours:</strong> {opening_hours}</p>
-            <p><strong>Website:</strong> {website}</p>
-            <p><strong>Phone:</strong> {phone}</p>
-          </div>
-          <div class="popup-review-controls">
-            <div class="review-stats">
-            </div>
-            <div class="review-actions">
-              <a 
-                href="#" 
-                class="btn btn-primary" 
-                style="color: white; text-decoration: none; margin-right: 8px;"
-              >
-                Visit
-              </a>
-              <a 
-                href="#/attractions/{OBJECTID}/reviews?name={name}" 
-                class="btn btn-primary" 
-                data-attraction-id="{OBJECTID}"
-                style="color: white; text-decoration: none;"
-              >
-                View Reviews
-              </a>
-            </div>
-          </div>
-        `
+        content: [
+          {
+            type: "custom",
+            creator: (event: any) => {
+              const attr = event.graphic.attributes;
+
+              // containerul principal 
+              const mainContainer = document.createElement("div");
+              mainContainer.style.display = "flex";
+              mainContainer.style.flexDirection = "column";
+              mainContainer.style.border = "none";
+              mainContainer.style.outline = "none";
+              mainContainer.className = "popup-custom-content";
+
+              const isAlreadyStart = this.startLocation && this.startLocation.attraction_id === attr.OBJECTID?.toString();
+              const isAlreadyInList = this.selectedStops.some(s => s.attraction_id === attr.OBJECTID?.toString());
+
+              // secțiunea de informații text
+              const infoDiv = document.createElement("div");
+              infoDiv.style.padding = "10px";
+              infoDiv.innerHTML = `
+                <p><strong>Type:</strong> ${attr.tourism || ''} ${attr.historic || ''} ${attr.amenity || ''}</p>
+                <p><strong>Description:</strong> ${attr.description || 'N/A'}</p>
+                <p><strong>Opening Hours:</strong> ${attr.opening_hours || 'N/A'}</p>
+                <p><strong>Website:</strong> ${attr.website || 'N/A'}</p>
+                <p><strong>Phone:</strong> ${attr.phone || 'N/A'}</p>
+              `;
+              mainContainer.appendChild(infoDiv);
+
+              // butoane
+              const buttonContainer = document.createElement("div");
+              buttonContainer.className = "popup-review-controls";
+              buttonContainer.style.display = "flex";
+              buttonContainer.style.gap = "8px";
+              buttonContainer.style.paddingTop = "10px";
+              buttonContainer.style.borderTop = "1px solid #e2e8f0";
+
+              if (isAlreadyStart || isAlreadyInList) {
+                const statusMsg = document.createElement("div");
+                statusMsg.innerHTML = `<span style="color: #48bb78; font-weight: bold; padding: 8px;">✓ Deja în itinerariu</span>`;
+                statusMsg.style.flex = "1";
+                buttonContainer.appendChild(statusMsg);
+              } else {
+                const visitBtn = document.createElement("button");
+                visitBtn.innerText = "Visit";
+                visitBtn.className = "btn btn-primary btn-add-stop";
+                visitBtn.style.flex = "1";
+                visitBtn.addEventListener("click", () => {
+                  this.handlePopupVisitClick(event.graphic);
+                });
+                buttonContainer.appendChild(visitBtn);
+              }
+
+              const reviewsBtn = document.createElement("a");
+              reviewsBtn.innerText = "Reviews";
+              reviewsBtn.className = "btn btn-primary";
+              reviewsBtn.style.flex = "1";
+              reviewsBtn.style.textAlign = "center";
+              reviewsBtn.href = `#/attractions/${attr.OBJECTID}/reviews?name=${encodeURIComponent(attr.name || '')}`;
+              buttonContainer.appendChild(reviewsBtn);
+
+              mainContainer.appendChild(buttonContainer);
+              return mainContainer;
+            }
+          }
+        ]
       }
     } as any);
     this.map.add(this.tourismLayer);
@@ -480,25 +510,67 @@ export class MapComponent implements OnInit, OnDestroy {
    * Șterge toate punctele de oprire.
    */
   clearAll(): void {
+    this.startLocation = null;
     this.selectedStops = [];
-    this.routeGraphicsLayer.removeAll();
+
     this.totalDistance = 0;
+    this.routeSummary = null;
+    this.showDirections = false;
+
+    if (this.routeGraphicsLayer) {
+      this.routeGraphicsLayer.removeAll();
+    }
+
+    console.log("Itinerariul a fost șters complet.");
+  }
+
+  //test
+  public setAsStart(index: number): void {
+    const selected = this.selectedStops[index];
+
+    if (this.startLocation && this.startLocation.attraction_id !== 'start_current') {
+      this.selectedStops.push(this.startLocation);
+    }
+
+    this.startLocation = {
+      attraction_id: selected.attraction_id,
+      name: selected.name, 
+      location: selected.location
+    };
+
+    this.selectedStops.splice(index, 1);
+    this.redrawStopGraphics();
   }
 
   calculateRoute(): void {
-    if (this.selectedStops.length < 2) {
+    if (!this.startLocation && this.selectedStops.length < 1) {
       alert('Vă rugăm să selectați cel puțin 2 locații pentru a calcula ruta.');
       return;
     }
 
     this.routeLoading = true;
-    console.log("Calculare traseu optim...");
+
+    const payload = {
+      attractions: this.selectedStops,
+      start_location: this.startLocation 
+    };
+
+    let allPoints = [...this.selectedStops];
+    if (this.startLocation) {
+      // Transformăm startLocation într-un format compatibil cu restul listei
+      const startAsStop = {
+        ...this.startLocation,
+        latitude: this.startLocation.location.latitude,
+        longitude: this.startLocation.location.longitude
+      };
+      allPoints.unshift(startAsStop); // Îl punem pe prima poziție
+    }
 
     // Transform attractions to match backend expected format
-    const transformedAttractions = this.selectedStops.map(stop => ({
+    const transformedAttractions = allPoints.map(stop => ({
       ...stop,
-      latitude: stop.location.latitude,
-      longitude: stop.location.longitude
+      latitude: stop.location ? stop.location.latitude : (stop as any).latitude,
+      longitude: stop.location ? stop.location.longitude : (stop as any).longitude
     }));
 
     // Call backend to calculate optimal route order
@@ -516,14 +588,22 @@ export class MapComponent implements OnInit, OnDestroy {
         }));
 
         // Update the selected stops with the optimized order
-        this.selectedStops = transformedRoute;
-        this.totalDistance = result.total_distance;
+        if (this.startLocation) {
+          this.startLocation = transformedRoute[0];
+          this.selectedStops = transformedRoute.slice(1);
+        } else {
+          this.selectedStops = transformedRoute;
+        }
 
+        this.totalDistance = result.total_distance;
+        this.redrawStopGraphics();
         // Redraw the stops in the new order
         this.redrawStopGraphics();
 
+        
         // Now calculate the actual route using ArcGIS routing service
-        this.calculateArcGISRoute(this.selectedStops);
+        const fullPath = this.startLocation ? [this.startLocation, ...this.selectedStops] : this.selectedStops;
+        this.calculateArcGISRoute(fullPath);
       },
       error: (error) => {
         console.error('Error calculating route:', error);
@@ -696,25 +776,107 @@ export class MapComponent implements OnInit, OnDestroy {
     const stopGraphic = new Graphic({
       geometry: point,
       symbol: markerSymbol,
-      attributes: stop,
-      popupTemplate: {
-        title: `${order}. ${stop.name}`,
-        content: `Locație selectată`
-      }
+      attributes: stop
     });
     this.routeGraphicsLayer.add(stopGraphic);
   }
 
-  private redrawStopGraphics(): void {
-    this.routeGraphicsLayer.removeAll();
-    this.selectedStops.forEach((stop, i) => this.drawStopGraphic(stop, i + 1));
+  redrawStopGraphics(): void {
+  this.routeGraphicsLayer.removeAll();
+  
+  if (this.startLocation) {
+    this.drawStartGraphic(this.startLocation);
+  }
+
+  this.selectedStops.forEach((stop, i) => this.drawStopGraphic(stop, i + 1));
+}
+
+  drawStartGraphic(start: any): void {
+    const point = new Point({
+      latitude: start.location.latitude,
+      longitude: start.location.longitude
+    });
+
+    const startSymbol = {
+      type: "simple-marker",
+      style: "path",
+      // Un simbol de tip "pin" verde pentru start
+      path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
+      color: [72, 187, 120],
+      size: 24,
+      outline: { color: [255, 255, 255], width: 2 }
+    } as any;
+
+    const graphic = new Graphic({
+      geometry: point,
+      symbol: startSymbol,
+      attributes: start
+    });
+    this.routeGraphicsLayer.add(graphic);
   }
 
   addStopToRoute(attraction: Attraction): void {
-    const exists = this.selectedStops.some(s => s.attraction_id === attraction.attraction_id);
-    if (!exists) {
+    const isStart = this.startLocation && this.startLocation.attraction_id === attraction.attraction_id;
+
+    const isSelected = this.selectedStops.some(s => s.attraction_id === attraction.attraction_id);
+
+    if (isStart) {
+      alert('Această locație este deja setată ca Punct de Start!');
+      return;
+    }
+
+    if (!isSelected) {
       this.selectedStops.push(attraction);
       this.redrawStopGraphics();
+    } else {
+      alert('Această locație este deja în lista de opriri!');
+    }
+  }
+
+  handlePopupVisitClick(graphic: esri.Graphic) {
+    console.log("Visit button clicked via custom creator!");
+
+    const attr = graphic.attributes;
+    const point = graphic.geometry as esri.Point;
+
+    const newStop: Attraction = {
+      attraction_id: attr.OBJECTID?.toString() || `id_${Date.now()}`,
+      name: attr.name || "Locație fără nume",
+      location: {
+        latitude: point.latitude,
+        longitude: point.longitude
+      },
+      description: attr.description || '',
+      type: attr.tourism || 'attraction',
+      city_id: 'RO'
+    };
+
+    this.addStopToRoute(newStop);
+
+    if (this.view.popup) {
+      this.view.popup.close();
+    }
+  }
+
+  setStartToCurrentLocation() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        this.startLocation = {
+          attraction_id: 'start_current',
+          name: "Locația Mea",
+          location: {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          }
+        };
+
+        this.redrawStopGraphics();
+
+        this.view.goTo({
+          center: [position.coords.longitude, position.coords.latitude],
+          zoom: 14
+        });
+      });
     }
   }
   

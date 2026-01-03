@@ -122,7 +122,7 @@
 
 .route-planner-panel {
   position: absolute;
-  top: 15px;
+  top: 60px;
   left: 15px;
   z-index: 1000;
   width: 300px;
@@ -143,109 +143,273 @@
     border-bottom: 1px solid #eee;
     padding-bottom: 10px;
   }
-  
+
   .helper-text {
-      font-size: 0.85rem;
-      color: #718096;
-      margin-bottom: 10px;
+    font-size: 0.85rem;
+    color: #718096;
+    margin-bottom: 10px;
   }
 
   .test-controls {
-      margin-bottom: 15px;
-  }
-  
-  .btn-test-stops {
-      width: 100%;
-      padding: 8px;
-      background: #f0f4ff;
-      color: #667eea;
-      border: 1px solid #667eea;
-      border-radius: 4px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-
-      &:hover {
-          background: #e4e7ff;
-      }
-  }
-
-  .stops-list {
     margin-bottom: 15px;
-    max-height: 200px;
-    overflow-y: auto;
+  }
+
+  .btn-test-stops {
+    width: 100%;
+    padding: 8px;
+    background: #f0f4ff;
+    color: #667eea;
+    border: 1px solid #667eea;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: #e4e7ff;
+    }
+  }
+
+  .start-location-section {
+    margin-bottom: 20px;
+    padding: 12px;
+    background: #f8fafc; 
+    border-radius: 8px;
+    border: 1px solid #edf2f7;
+    animation: fadeIn 0.3s ease;
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      color: #2d3748;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .start-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      /* Stilul pentru butonul "Setează Locația Mea" */
+      .btn-location {
+        width: 100%;
+        padding: 10px 15px;
+        background: white;
+        border: 1px solid #cbd5e0;
+        border-radius: 6px;
+        color: #4a5568;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+
+        i {
+          color: #667eea;
+          font-size: 0.9rem;
+        }
+
+        &:hover {
+          background: #f7fafc;
+          border-color: #667eea;
+          color: #667eea;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        &:active {
+          transform: translateY(1px);
+        }
+      }
+
+      .selected-start-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: white;
+        border: 2px solid #48bb78; 
+        padding: 10px 15px;
+        border-radius: 6px;
+        box-shadow: 0 2px 6px rgba(72, 187, 120, 0.1);
+
+        i {
+          font-size: 1rem;
+        }
+
+        span {
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: #2f855a;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          flex-grow: 1;
+        }
+
+        .btn-remove-small {
+          background: #fff5f5;
+          border: none;
+          color: #e53e3e;
+          cursor: pointer;
+          font-weight: bold;
+          font-size: 1.2rem;
+          line-height: 1;
+          padding: 4px 8px;
+          border-radius: 4px;
+          transition: all 0.2s;
+
+          &:hover {
+            background: #fed7d7;
+            color: #c53030;
+          }
+        }
+      }
+    }
+  }
+}
+
+.stop-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+
+  .btn-set-start {
+    background: none;
+    border: none;
+    color: #a0aec0;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 4px;
+    transition: all 0.2s;
+
+    &:hover {
+      color: #48bb78; // Verde la hover (steag)
+      transform: scale(1.1);
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stops-list {
+  margin-bottom: 15px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.placeholder {
+  font-style: italic;
+  color: #a0aec0;
+  text-align: center;
+  padding: 10px 0;
+  border: 1px dashed #e2e8f0;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.stop-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  margin-bottom: 5px;
+  background-color: #f7fafc;
+  border-radius: 4px;
+  border-left: 3px solid #667eea;
+  font-size: 0.95rem;
+
+  span {
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     padding-right: 5px;
   }
 
-  .placeholder {
-    font-style: italic;
-    color: #a0aec0;
-    text-align: center;
-    padding: 10px 0;
-    border: 1px dashed #e2e8f0;
-    border-radius: 4px;
-    font-size: 0.9rem;
-  }
-  
-  .stop-item {
-    display: flex;
-    justify-content: space-between;
+  .stop-actions {
+    display: flex; 
+    gap: 12px; 
     align-items: center;
-    padding: 8px 10px;
-    margin-bottom: 5px;
-    background-color: #f7fafc;
-    border-radius: 4px;
-    border-left: 3px solid #667eea; 
-    font-size: 0.95rem;
 
-    span {
-        flex-grow: 1;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        padding-right: 5px;
+    .btn-set-start {
+      background: none;
+      border: none;
+      color: #a0aec0;
+      cursor: pointer;
+      font-size: 0.9rem;
+      padding: 0;
+      transition: all 0.2s;
+
+      &:hover {
+        color: #48bb78; 
+        transform: scale(1.2);
+      }
+    }
+
+    .btn-remove {
+      margin-left: 0; 
+      color: #e53e3e;
+      font-size: 1.2rem;
     }
   }
+}
 
-  .btn-remove {
-    background: none;
-    border: none;
-    color: #e53e3e;
-    font-weight: bold;
-    cursor: pointer;
-    margin-left: 10px;
-    padding: 0 5px;
-    line-height: 1;
-    font-size: 1.2rem;
-    transition: color 0.2s;
+.btn-remove {
+  background: none;
+  border: none;
+  color: #e53e3e;
+  font-weight: bold;
+  cursor: pointer;
+  margin-left: 10px;
+  padding: 0 5px;
+  line-height: 1;
+  font-size: 1.2rem;
+  transition: color 0.2s;
 
-    &:hover {
-      color: #c53030;
-    }
+  &:hover {
+    color: #c53030;
   }
+}
 
-  .route-actions {
-    display: flex;
-    gap: 10px;
-    padding-top: 10px;
-    border-top: 1px solid #e2e8f0;
-  }
+.route-actions {
+  display: flex;
+  gap: 10px;
+  padding-top: 15px;
+  margin-top: auto;
+  border-top: 1px solid #edf2f7;
 
   .btn-calculate {
-    flex-grow: 1;
-    padding: 10px 15px;
+    flex: 1;
+    padding: 12px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
     border-radius: 6px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
-    
-    i { margin-right: 5px; }
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform 0.2s, box-shadow 0.2s;
 
     &:hover:not(:disabled) {
-      box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
     }
 
     &:disabled {
@@ -255,33 +419,52 @@
   }
 
   .btn-clear {
-    padding: 10px;
-    background: #e2e8f0;
-    color: #4a5568;
-    border: none;
+    padding: 12px;
+    background: #fff5f5;
+    color: #e53e3e;
+    border: 1px solid #feb2b2;
     border-radius: 6px;
-    font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
 
     &:hover:not(:disabled) {
-      background-color: #cbd5e0;
+      background: #feb2b2;
+      color: white;
     }
+  }
+}
 
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
+
+.btn-clear {
+  padding: 10px;
+  background: #e2e8f0;
+  color: #4a5568;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover:not(:disabled) {
+    background-color: #cbd5e0;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 }
 
 .tourism-filter {
   position: absolute;
-  top: 15px;
-  left: 15px;
+  top: 60px;
+  left: 330px;
   z-index: 1000;
   padding: 12px;
   max-width: 280px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 
   label {
     font-weight: bold;
@@ -325,12 +508,19 @@
     align-items: center;
     margin-top: 15px;
     margin-bottom: 5px;
+    pointer-events: auto !important;
 
     .review-stats {
       display: flex;
       align-items: center;
       gap: 8px;
     }
+  }
+
+  .esri-popup__content {
+    border-left: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 }
 
@@ -490,3 +680,15 @@
   }
 }
 
+  .esri-popup__main-container {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  .esri-popup__header {
+    border-bottom: none !important;
+  }
+
+  .esri-popup__section {
+    border-left: none !important;
+    padding: 0 !important;
+  }

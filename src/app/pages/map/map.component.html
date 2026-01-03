@@ -19,32 +19,43 @@
   <!-- Tourism Attraction Filter -->
   <div class="route-planner-panel esri-widget esri-widget--panel">
     <h2>Planificator Traseu</h2>
-    <p class="helper-text">Adăugați locațiile concrete pe care doriți să le vizitați în România:</p>
   
-    <div class="stops-list">
-      <p *ngIf="selectedStops.length === 0" class="placeholder">
-        Nicio locație adăugată. Utilizați harta/căutarea pentru a selecta puncte.
-      </p>
-      <div *ngFor="let stop of selectedStops; let i = index" class="stop-item">
-        <span>{{ i + 1 }}. {{ stop.name }}</span>
-        <button class="btn-remove" (click)="removeStop(i)">×</button>
+    <div class="start-location-section">
+      <label><strong>Punct de Start:</strong></label>
+      <div class="start-options">
+        <button *ngIf="!startLocation" class="btn-location" (click)="setStartToCurrentLocation()">
+          <i class="fas fa-location-arrow"></i> Setează Locația Mea
+        </button>
+  
+        <div *ngIf="startLocation" class="selected-start-card">
+          <i class="fas fa-map-marker-alt" style="color: #48bb78;"></i>
+          <span>{{ startLocation.name }}</span>
+          <button class="btn-remove-small" (click)="startLocation = null; redrawStopGraphics()">×</button>
+        </div>
       </div>
     </div>
   
-    <div class="route-actions">
-      <button class="btn-calculate" [disabled]="selectedStops.length < 2 || routeLoading" (click)="calculateRoute()">
-        <span *ngIf="!routeLoading">
-          <i class="fas fa-route"></i>
-          Calculează Traseul Optim
-        </span>
-        <span *ngIf="routeLoading">
-          <i class="fas fa-spinner fa-spin"></i>
-          Se Calculează...
-        </span>
+    <p class="helper-text">Locații de vizitat:</p>
+  
+    <div class="stops-list">
+      <div *ngFor="let stop of selectedStops; let i = index" class="stop-item">
+        <span>{{ i + 1 }}. {{ stop.name }}</span>
+        <div class="stop-actions">
+          <button class="btn-set-start" (click)="setAsStart(i)" title="Setează ca start">
+            <i class="fas fa-flag-checkered"></i>
+          </button>
+          <button class="btn-remove" (click)="removeStop(i)">×</button>
+        </div>
+      </div>
+    </div>
+  
+    <div class="route-actions" *ngIf="selectedStops.length > 0 || startLocation">
+      <button class="btn-calculate" (click)="calculateRoute()" [disabled]="selectedStops.length === 0">
+        <i class="fas fa-route"></i> Calculează Rută
       </button>
   
-      <button class="btn-clear" [disabled]="selectedStops.length === 0" (click)="clearAll()">
-        Șterge Tot
+      <button class="btn-clear" (click)="clearAll()" title="Șterge tot itinerariul">
+        <i class="fas fa-trash-alt"></i>
       </button>
     </div>
   </div>
