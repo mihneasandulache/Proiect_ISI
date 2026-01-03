@@ -82,12 +82,6 @@ export class MapComponent implements OnInit, OnDestroy {
   showDirections: boolean = false;
   directions: any[] = [];
   routeSummary: { distance: string, time: string } | null = null;
-
-  // Directions panel
-  showDirections: boolean = false;
-  directions: any[] = [];
-  routeSummary: { distance: string, time: string } | null = null;
-
   routeGraphicsLayer: esri.GraphicsLayer;
 
   constructor(
