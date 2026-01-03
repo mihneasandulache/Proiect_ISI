@@ -173,7 +173,7 @@
   .start-location-section {
     margin-bottom: 20px;
     padding: 12px;
-    background: #f8fafc;
+    background: #f8fafc; 
     border-radius: 8px;
     border: 1px solid #edf2f7;
     animation: fadeIn 0.3s ease;
@@ -230,7 +230,7 @@
         align-items: center;
         gap: 12px;
         background: white;
-        border: 2px solid #48bb78;
+        border: 2px solid #48bb78; 
         padding: 10px 15px;
         border-radius: 6px;
         box-shadow: 0 2px 6px rgba(72, 187, 120, 0.1);
@@ -341,8 +341,8 @@
   }
 
   .stop-actions {
-    display: flex;
-    gap: 12px;
+    display: flex; 
+    gap: 12px; 
     align-items: center;
 
     .btn-set-start {
@@ -355,13 +355,13 @@
       transition: all 0.2s;
 
       &:hover {
-        color: #48bb78;
+        color: #48bb78; 
         transform: scale(1.2);
       }
     }
 
     .btn-remove {
-      margin-left: 0;
+      margin-left: 0; 
       color: #e53e3e;
       font-size: 1.2rem;
     }
@@ -680,15 +680,15 @@
   }
 }
 
-.esri-popup__main-container {
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
-}
+  .esri-popup__main-container {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
+  }
 
-.esri-popup__header {
-  border-bottom: none !important;
-}
+  .esri-popup__header {
+    border-bottom: none !important;
+  }
 
-.esri-popup__section {
-  border-left: none !important;
-  padding: 0 !important;
-}
+  .esri-popup__section {
+    border-left: none !important;
+    padding: 0 !important;
+  }
