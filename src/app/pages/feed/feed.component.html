@@ -45,6 +45,63 @@
         <span *ngIf="itinerary.duration">{{ itinerary.duration }}</span>
       </div>
 
+      <div class="review-section" *ngIf="itinerary.id as itineraryId">
+        <div class="review-summary">
+          <span class="rating-text">
+            Average: {{ getRatingSummary(itinerary).average }} / 5 ({{ getRatingSummary(itinerary).count }} reviews)
+          </span>
+          <button class="btn-reviews" (click)="toggleReviews(itinerary)">
+            {{ reviewPanels[itineraryId] ? 'Hide reviews' : 'View reviews' }}
+          </button>
+        </div>
+
+        <div class="review-panel" *ngIf="reviewPanels[itineraryId]">
+          <div class="review-form">
+            <label>Leave a review</label>
+            <div class="star-row">
+              <button
+                class="star-button"
+                *ngFor="let star of getStarArray()"
+                [class.active]="star <= getReviewForm(itineraryId).rating"
+                (click)="setRating(itineraryId, star)"
+                type="button"
+              >
+                ★
+              </button>
+            </div>
+            <textarea
+              rows="3"
+              placeholder="Share your experience..."
+              [(ngModel)]="getReviewForm(itineraryId).comment"
+            ></textarea>
+            <div class="review-error" *ngIf="getReviewForm(itineraryId).error">
+              {{ getReviewForm(itineraryId).error }}
+            </div>
+            <button
+              class="btn-submit-review"
+              (click)="submitReview(itinerary)"
+              [disabled]="getReviewForm(itineraryId).submitting"
+            >
+              {{ getReviewForm(itineraryId).submitting ? 'Submitting...' : 'Submit review' }}
+            </button>
+          </div>
+
+          <div class="review-list">
+            <div class="review-empty" *ngIf="!reviewsByItinerary[itineraryId]?.length">
+              No reviews yet.
+            </div>
+            <div class="review-item" *ngFor="let review of reviewsByItinerary[itineraryId]">
+              <div class="review-header">
+                <span class="review-user">{{ review.userName || 'Anonymous' }}</span>
+                <span class="review-rating">{{ getStarDisplay(review.rating) }}</span>
+              </div>
+              <div class="review-comment">{{ review.comment }}</div>
+              <div class="review-date">{{ review.created | date:'MMM d, y' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="card-stops" *ngIf="itinerary.attractions?.length">
         <span class="stop-name" *ngFor="let stop of itinerary.attractions; let idx = index">
           {{ stop.name }}<span class="stop-arrow" *ngIf="idx < itinerary.attractions.length - 1"> -> </span>
