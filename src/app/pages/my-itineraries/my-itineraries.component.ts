@@ -13,6 +13,7 @@ export class MyItinerariesComponent implements OnInit {
   isLoading = true;
   errorMessage = '';
   currentUser: User | null = null;
+  deletingId: string | null = null;
 
   constructor(
     private apiService: ApiService,
@@ -57,5 +58,29 @@ export class MyItinerariesComponent implements OnInit {
       return;
     }
     this.router.navigate(['/map'], { queryParams: { itineraryId: itinerary.id } });
+  }
+
+  deleteItinerary(itinerary: Itinerary): void {
+    if (!itinerary.id || this.deletingId) {
+      return;
+    }
+
+    const confirmed = confirm(`Delete "${itinerary.title}"? This cannot be undone.`);
+    if (!confirmed) {
+      return;
+    }
+
+    this.deletingId = itinerary.id;
+    this.apiService.deleteItinerary(itinerary.id).subscribe({
+      next: () => {
+        this.itineraries = this.itineraries.filter(item => item.id !== itinerary.id);
+        this.deletingId = null;
+      },
+      error: (err) => {
+        console.error('Error deleting itinerary:', err);
+        this.errorMessage = 'Could not delete itinerary.';
+        this.deletingId = null;
+      }
+    });
   }
 }

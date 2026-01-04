@@ -40,6 +40,16 @@
         <span *ngIf="itinerary.duration">{{ itinerary.duration }}</span>
       </div>
 
+      <div class="card-actions">
+        <button
+          class="btn-delete"
+          (click)="deleteItinerary(itinerary)"
+          [disabled]="deletingId === itinerary.id"
+        >
+          {{ deletingId === itinerary.id ? 'Deleting...' : 'Delete' }}
+        </button>
+      </div>
+
       <div class="card-stops" *ngIf="itinerary.attractions?.length">
         <span class="stop-name" *ngFor="let stop of itinerary.attractions; let idx = index">
           {{ stop.name }}<span class="stop-arrow" *ngIf="idx < itinerary.attractions.length - 1"> -> </span>
