@@ -336,9 +336,13 @@ def get_itineraries():
     """Get itineraries feed"""
     user_id = request.args.get('userId')
     limit = int(request.args.get('limit', 20))
+    posted = request.args.get('posted')
+    posted_filter = None
+    if posted is not None:
+        posted_filter = posted.lower() == 'true'
 
     try:
-        itineraries = fb_service.get_itineraries(limit=limit, user_id=user_id)
+        itineraries = fb_service.get_itineraries(limit=limit, user_id=user_id, posted=posted_filter)
         return jsonify(itineraries), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -370,6 +374,7 @@ def create_itinerary():
         data['created'] = datetime.now().isoformat()
         data['likes'] = 0
         data['views'] = 0
+        data['posted'] = data.get('posted', False)
 
         itinerary_id = fb_service.create_itinerary(data)
 

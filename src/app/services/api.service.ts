@@ -62,6 +62,8 @@ export interface Itinerary {
   created?: string;
   routeGeometry?: any;
   routeLine?: any;
+  posted?: boolean;
+  postedAt?: string;
 }
 
 export interface SurveyPayload {
@@ -208,10 +210,11 @@ export class ApiService {
 
   // ============= ITINERARIES =============
 
-  getItineraries(userId?: string, limit?: number): Observable<Itinerary[]> {
+  getItineraries(userId?: string, limit?: number, posted?: boolean): Observable<Itinerary[]> {
     let params = new HttpParams();
     if (userId) params = params.set('userId', userId);
     if (limit) params = params.set('limit', limit.toString());
+    if (posted !== undefined) params = params.set('posted', posted.toString());
     return this.http.get<Itinerary[]>(`${this.apiUrl}/itineraries`, { params });
   }
 

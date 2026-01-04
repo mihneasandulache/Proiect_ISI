@@ -29,6 +29,11 @@ export class AppComponent implements OnInit {
       name: 'My itineraries',
       link: '/my-itineraries',
       authRequired: true
+    },
+    {
+      name: 'Feed',
+      link: '/feed',
+      authRequired: true
     }
   ];
 

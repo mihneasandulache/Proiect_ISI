@@ -247,7 +247,7 @@ class FirebaseService:
     
     # ============= ITINERARIES =============
     
-    def get_itineraries(self, limit=20, user_id=None):
+    def get_itineraries(self, limit=20, user_id=None, posted=None):
         """Get itineraries for feed"""
         ref = self.db.child('itineraries')
         
@@ -255,8 +255,11 @@ class FirebaseService:
             # Get user's itineraries
             itineraries = ref.order_by_child('userId').equal_to(user_id).get()
         else:
-            # Get all itineraries (for feed)
-            itineraries = ref.order_by_child('created').limit_to_last(limit).get()
+            if posted is True:
+                itineraries = ref.order_by_child('posted').equal_to(True).get()
+            else:
+                # Get all itineraries (for feed)
+                itineraries = ref.order_by_child('created').limit_to_last(limit).get()
         
         if not itineraries:
             return []
@@ -265,10 +268,13 @@ class FirebaseService:
         result = []
         for key, value in itineraries.items():
             value['id'] = key
-            result.append(value)
+            if posted is None or value.get('posted') == posted:
+                result.append(value)
         
         # Sort by created date (newest first)
         result.sort(key=lambda x: x.get('created', ''), reverse=True)
+        if limit and len(result) > limit:
+            result = result[:limit]
         
         return result
     
