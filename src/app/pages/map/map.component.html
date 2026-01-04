@@ -53,10 +53,27 @@
       <button class="btn-calculate" (click)="calculateRoute()" [disabled]="selectedStops.length === 0">
         <i class="fas fa-route"></i> Calculează Rută
       </button>
-  
+
       <button class="btn-clear" (click)="clearAll()" title="Șterge tot itinerariul">
         <i class="fas fa-trash-alt"></i>
       </button>
+    </div>
+
+    <div class="save-itinerary" *ngIf="currentUser">
+      <label>Salvează itinerariul</label>
+      <input type="text" [(ngModel)]="itineraryTitle" placeholder="Titlu itinerariu" />
+      <textarea rows="3" [(ngModel)]="itineraryDescription" placeholder="Descriere scurtă"></textarea>
+      <button class="btn-save" (click)="saveItinerary()" [disabled]="!canSaveItinerary()">
+        <i class="fas fa-bookmark"></i>
+        {{ savingItinerary ? 'Se salvează...' : 'Salvează' }}
+      </button>
+      <div class="save-status" *ngIf="saveMessage">{{ saveMessage }}</div>
+      <button class="btn-link" (click)="goToMyItineraries()">Vezi itinerariile mele</button>
+    </div>
+
+    <div class="save-itinerary-guest" *ngIf="!currentUser">
+      <span>Autentifică-te pentru a salva itinerarii.</span>
+      <button class="btn-login-inline" (click)="goToLogin()">Login</button>
     </div>
   </div>
   

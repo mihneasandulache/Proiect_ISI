@@ -24,6 +24,11 @@ export class AppComponent implements OnInit {
     {
       name: 'Map',
       link: '/map'
+    },
+    {
+      name: 'My itineraries',
+      link: '/my-itineraries',
+      authRequired: true
     }
   ];
 
@@ -53,8 +58,8 @@ export class AppComponent implements OnInit {
   }
 
   updateTabs() {
-    // Show all tabs regardless of auth status
-    this.tabs = [...this.allTabs];
+    const isAuthenticated = !!this.currentUser;
+    this.tabs = this.allTabs.filter(tab => !tab.authRequired || isAuthenticated);
   }
 
   logout() {
@@ -86,4 +91,3 @@ export class AppComponent implements OnInit {
     console.log('The map loaded: ' + status);
   }
 }
-

@@ -1,0 +1,46 @@
+<div class="my-itineraries-page">
+  <div class="page-header">
+    <div class="header-text">
+      <h1>My itineraries</h1>
+      <p>All the routes you saved from the map planner.</p>
+    </div>
+    <button class="btn-primary" (click)="goToMap()">Plan a new itinerary</button>
+  </div>
+
+  <div class="status" *ngIf="isLoading">Loading your itineraries...</div>
+  <div class="status error" *ngIf="!isLoading && errorMessage">{{ errorMessage }}</div>
+
+  <div class="empty-state" *ngIf="!isLoading && !errorMessage && itineraries.length === 0">
+    <h3>No itineraries saved yet</h3>
+    <p>Build a route on the map and save it to see it here.</p>
+    <button class="btn-secondary" (click)="goToMap()">Start planning</button>
+  </div>
+
+  <div class="itinerary-grid" *ngIf="!isLoading && itineraries.length > 0">
+    <div class="itinerary-card" *ngFor="let itinerary of itineraries">
+      <div class="card-header">
+        <div>
+          <h3>{{ itinerary.title }}</h3>
+          <div class="card-date">{{ itinerary.created | date:'MMM d, y' }}</div>
+        </div>
+        <div class="card-meta">
+          <span>{{ itinerary.attractions?.length || 0 }} stops</span>
+        </div>
+      </div>
+
+      <p class="card-description">{{ itinerary.description }}</p>
+
+      <div class="card-details">
+        <span *ngIf="itinerary.totalDistance">{{ itinerary.totalDistance | number:'1.0-0' }} km</span>
+        <span *ngIf="itinerary.duration">{{ itinerary.duration }}</span>
+      </div>
+
+      <div class="card-stops" *ngIf="itinerary.attractions?.length">
+        <span class="stop-pill" *ngFor="let stop of itinerary.attractions | slice:0:4">{{ stop.name }}</span>
+        <span class="stop-more" *ngIf="itinerary.attractions.length > 4">
+          +{{ itinerary.attractions.length - 4 }} more
+        </span>
+      </div>
+    </div>
+  </div>
+</div>

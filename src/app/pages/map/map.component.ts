@@ -30,7 +30,7 @@ import * as route from '@arcgis/core/rest/route';
 import RouteParameters from '@arcgis/core/rest/support/RouteParameters';
 import FeatureSet from '@arcgis/core/rest/support/FeatureSet';
 import { FirebaseService } from '../../services/firebase.service';
-import { ApiService, Attraction } from '../../services/api.service';
+import { ApiService, Attraction, Itinerary } from '../../services/api.service';
 import { Router } from '@angular/router';
 import { AuthService, User } from '../../services/auth.service';
 
@@ -77,6 +77,11 @@ export class MapComponent implements OnInit, OnDestroy {
   routeLoading: boolean = false;
   totalDistance: number = 0;
   startLocation: Attraction | any = null;
+  itineraryTitle = '';
+  itineraryDescription = '';
+  savingItinerary = false;
+  saveMessage = '';
+  routeGeometry: number[][] | null = null;
 
   // Directions panel
   showDirections: boolean = false;
@@ -509,6 +514,8 @@ export class MapComponent implements OnInit, OnDestroy {
 
     this.totalDistance = 0;
     this.routeSummary = null;
+    this.routeGeometry = null;
+    this.saveMessage = '';
     this.showDirections = false;
 
     if (this.routeGraphicsLayer) {
@@ -516,6 +523,74 @@ export class MapComponent implements OnInit, OnDestroy {
     }
 
     console.log("Itinerariul a fost șters complet.");
+  }
+
+  canSaveItinerary(): boolean {
+    return !!this.currentUser && !this.savingItinerary && (!!this.startLocation || this.selectedStops.length > 0);
+  }
+
+  private buildItineraryAttractions(): Attraction[] {
+    const stops = [...this.selectedStops];
+    if (this.startLocation) {
+      const startAttraction: Attraction = {
+        attraction_id: this.startLocation.attraction_id || `start_${Date.now()}`,
+        name: this.startLocation.name || 'Start',
+        location: {
+          latitude: this.startLocation.location.latitude,
+          longitude: this.startLocation.location.longitude
+        },
+        description: '',
+        type: 'start',
+        city_id: 'RO'
+      };
+      if (!stops.some(stop => stop.attraction_id === startAttraction.attraction_id)) {
+        stops.unshift(startAttraction);
+      }
+    }
+    return stops;
+  }
+
+  saveItinerary(): void {
+    if (!this.currentUser) {
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    if (!this.canSaveItinerary()) {
+      return;
+    }
+
+    const title = this.itineraryTitle.trim() || `Itinerary ${new Date().toLocaleDateString()}`;
+    const description = this.itineraryDescription.trim() || 'Saved from the map planner.';
+
+    const itinerary: Itinerary = {
+      title,
+      description,
+      attractions: this.buildItineraryAttractions(),
+      userId: this.currentUser.user_id,
+      userName: this.currentUser.username,
+      duration: this.routeSummary ? `${this.routeSummary.time} min` : undefined,
+      totalDistance: this.totalDistance || undefined,
+      routeGeometry: this.routeGeometry || undefined
+    };
+
+    this.savingItinerary = true;
+    this.saveMessage = '';
+    this.apiService.createItinerary(itinerary).subscribe({
+      next: () => {
+        this.savingItinerary = false;
+        this.saveMessage = 'Itinerary saved to your account.';
+      },
+      error: (err) => {
+        console.error('Error saving itinerary:', err);
+        this.savingItinerary = false;
+        this.saveMessage = 'Could not save itinerary. Please try again.';
+      }
+    });
+  }
+
+  goToMyItineraries(): void {
+    this.router.navigate(['/my-itineraries']);
   }
 
   //test
@@ -590,6 +665,7 @@ export class MapComponent implements OnInit, OnDestroy {
         }
 
         this.totalDistance = result.total_distance;
+        this.routeGeometry = result.route_geometry || null;
         this.redrawStopGraphics();
         // Redraw the stops in the new order
         this.redrawStopGraphics();

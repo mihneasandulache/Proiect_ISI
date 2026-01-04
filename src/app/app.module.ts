@@ -27,6 +27,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AttractionReviewsComponent } from './pages/attraction-reviews/attraction-review.component';
 import { AddReviewComponent } from './pages/add-review/add-review.component';
+import { MyItinerariesComponent } from './pages/my-itineraries/my-itineraries.component';
 
 
 @NgModule({
@@ -38,7 +39,8 @@ import { AddReviewComponent } from './pages/add-review/add-review.component';
     SignupComponent,
     SurveyComponent,
     AttractionReviewsComponent,
-    AddReviewComponent
+    AddReviewComponent,
+    MyItinerariesComponent
   ],
   imports: [
     BrowserModule,
