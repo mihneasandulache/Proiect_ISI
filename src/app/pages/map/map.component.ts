@@ -31,7 +31,7 @@ import RouteParameters from '@arcgis/core/rest/support/RouteParameters';
 import FeatureSet from '@arcgis/core/rest/support/FeatureSet';
 import { FirebaseService } from '../../services/firebase.service';
 import { ApiService, Attraction, Itinerary } from '../../services/api.service';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService, User } from '../../services/auth.service';
 
 
@@ -82,6 +82,7 @@ export class MapComponent implements OnInit, OnDestroy {
   savingItinerary = false;
   saveMessage = '';
   routeGeometry: number[][] | null = null;
+  arcgisRouteLine: any = null;
 
   // Directions panel
   showDirections: boolean = false;
@@ -93,7 +94,8 @@ export class MapComponent implements OnInit, OnDestroy {
     private fb: FirebaseService,
     private apiService: ApiService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) { }
   private firebaseUnsubscribe: (() => void) | null = null;
   private userPosUnsubscribe: (() => void) | null = null;
@@ -101,6 +103,7 @@ export class MapComponent implements OnInit, OnDestroy {
   private lastCenterSent: number = 0;
   private centerSyncTimer: any = null;
   graphicsLayerFirebase: esri.GraphicsLayer;
+  private pendingItineraryId: string | null = null;
 
   ngOnInit() {
     // Load tourism configuration from backend
@@ -110,9 +113,24 @@ export class MapComponent implements OnInit, OnDestroy {
 
     this.loadTourismConfig();
 
+    this.route.queryParams.subscribe(params => {
+      const itineraryId = params['itineraryId'];
+      if (itineraryId) {
+        if (this.loaded) {
+          this.loadItineraryForMap(itineraryId);
+        } else {
+          this.pendingItineraryId = itineraryId;
+        }
+      }
+    });
+
     this.initializeMap().then(() => {
       this.loaded = this.view.ready;
       this.mapLoadedEvent.emit(true);
+      if (this.pendingItineraryId) {
+        this.loadItineraryForMap(this.pendingItineraryId);
+        this.pendingItineraryId = null;
+      }
     });
   }
 
@@ -515,6 +533,7 @@ export class MapComponent implements OnInit, OnDestroy {
     this.totalDistance = 0;
     this.routeSummary = null;
     this.routeGeometry = null;
+    this.arcgisRouteLine = null;
     this.saveMessage = '';
     this.showDirections = false;
 
@@ -571,7 +590,8 @@ export class MapComponent implements OnInit, OnDestroy {
       userName: this.currentUser.username,
       duration: this.routeSummary ? `${this.routeSummary.time} min` : undefined,
       totalDistance: this.totalDistance || undefined,
-      routeGeometry: this.routeGeometry || undefined
+      routeGeometry: this.routeGeometry || undefined,
+      routeLine: this.arcgisRouteLine || undefined
     };
 
     this.savingItinerary = true;
@@ -591,6 +611,124 @@ export class MapComponent implements OnInit, OnDestroy {
 
   goToMyItineraries(): void {
     this.router.navigate(['/my-itineraries']);
+  }
+
+  private loadItineraryForMap(itineraryId: string): void {
+    this.apiService.getItinerary(itineraryId).subscribe({
+      next: (itinerary) => {
+        this.applyItineraryToMap(itinerary);
+      },
+      error: (err) => {
+        console.error('Error loading itinerary:', err);
+      }
+    });
+  }
+
+  private applyItineraryToMap(itinerary: Itinerary): void {
+    if (!itinerary || !itinerary.attractions) {
+      return;
+    }
+
+    const attractions = [...itinerary.attractions];
+    const first = attractions[0];
+    if (first && (first.type === 'start' || (first.attraction_id || '').startsWith('start_'))) {
+      this.startLocation = {
+        attraction_id: first.attraction_id,
+        name: first.name,
+        location: first.location
+      };
+      this.selectedStops = attractions.slice(1);
+    } else {
+      this.startLocation = null;
+      this.selectedStops = attractions;
+    }
+
+    this.totalDistance = itinerary.totalDistance || 0;
+    if (itinerary.duration || itinerary.totalDistance) {
+      this.routeSummary = {
+        distance: itinerary.totalDistance ? itinerary.totalDistance.toFixed(2) : '',
+        time: itinerary.duration || ''
+      };
+    } else {
+      this.routeSummary = null;
+    }
+
+    this.routeGeometry = itinerary.routeGeometry || null;
+    this.arcgisRouteLine = itinerary.routeLine || null;
+    this.showDirections = false;
+    this.saveMessage = '';
+
+    if (this.routeGraphicsLayer) {
+      this.routeGraphicsLayer.removeAll();
+    }
+    this.redrawStopGraphics();
+    if (this.arcgisRouteLine) {
+      this.drawArcgisRouteLine(this.arcgisRouteLine);
+    } else if (this.routeGeometry && this.routeGeometry.length > 1) {
+      this.drawRouteLine(this.routeGeometry);
+    }
+
+    this.fitViewToItinerary();
+  }
+
+  private fitViewToItinerary(): void {
+    if (!this.view) {
+      return;
+    }
+
+    const points: Point[] = [];
+    if (this.startLocation?.location) {
+      points.push(new Point({
+        longitude: this.startLocation.location.longitude,
+        latitude: this.startLocation.location.latitude
+      }));
+    }
+    this.selectedStops.forEach(stop => {
+      if (stop?.location) {
+        points.push(new Point({
+          longitude: stop.location.longitude,
+          latitude: stop.location.latitude
+        }));
+      }
+    });
+
+    if (points.length === 0) {
+      return;
+    }
+
+    this.view.goTo(points, { duration: 500 }).catch((error: any) => {
+      console.error('Error fitting view to itinerary:', error);
+    });
+  }
+
+  private drawArcgisRouteLine(routeLine: any): void {
+    if (!this.routeGraphicsLayer || !routeLine?.paths) {
+      return;
+    }
+
+    this.routeGraphicsLayer.graphics.forEach((graphic) => {
+      if (graphic.geometry.type === 'polyline') {
+        this.routeGraphicsLayer.remove(graphic);
+      }
+    });
+
+    const polyline = new Polyline({
+      paths: routeLine.paths,
+      spatialReference: routeLine.spatialReference
+    });
+
+    const lineSymbol = {
+      type: "simple-line",
+      color: [51, 122, 183, 0.8],
+      width: 4
+    } as any;
+
+    const routeGraphic = new Graphic({
+      geometry: polyline,
+      symbol: lineSymbol
+    });
+
+    this.routeGraphicsLayer.add(routeGraphic);
   }
 
   //test
@@ -618,6 +756,7 @@ export class MapComponent implements OnInit, OnDestroy {
     }
 
     this.routeLoading = true;
+    this.arcgisRouteLine = null;
 
     const payload = {
       attractions: this.selectedStops,
@@ -739,6 +878,9 @@ export class MapComponent implements OnInit, OnDestroy {
         });
 
         this.routeGraphicsLayer.add(routeGraphic);
+        this.arcgisRouteLine = routeResult.route.geometry?.toJSON
+          ? routeResult.route.geometry.toJSON()
+          : routeResult.route.geometry;
 
         // Get total distance from ArcGIS
         const totalKm = (routeResult.route.attributes.Total_Kilometers || 0).toFixed(2);

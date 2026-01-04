@@ -28,6 +28,11 @@
         </div>
       </div>
 
+      <app-mini-map
+        [itinerary]="itinerary"
+        (mapClick)="openItineraryOnMap(itinerary)"
+      ></app-mini-map>
+
       <p class="card-description">{{ itinerary.description }}</p>
 
       <div class="card-details">
@@ -36,9 +41,8 @@
       </div>
 
       <div class="card-stops" *ngIf="itinerary.attractions?.length">
-        <span class="stop-pill" *ngFor="let stop of itinerary.attractions | slice:0:4">{{ stop.name }}</span>
-        <span class="stop-more" *ngIf="itinerary.attractions.length > 4">
-          +{{ itinerary.attractions.length - 4 }} more
+        <span class="stop-name" *ngFor="let stop of itinerary.attractions; let idx = index">
+          {{ stop.name }}<span class="stop-arrow" *ngIf="idx < itinerary.attractions.length - 1"> -> </span>
         </span>
       </div>
     </div>

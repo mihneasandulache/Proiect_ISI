@@ -28,6 +28,7 @@ import { RouterModule } from '@angular/router';
 import { AttractionReviewsComponent } from './pages/attraction-reviews/attraction-review.component';
 import { AddReviewComponent } from './pages/add-review/add-review.component';
 import { MyItinerariesComponent } from './pages/my-itineraries/my-itineraries.component';
+import { MiniMapComponent } from './components/mini-map/mini-map.component';
 
 
 @NgModule({
@@ -40,7 +41,8 @@ import { MyItinerariesComponent } from './pages/my-itineraries/my-itineraries.co
     SurveyComponent,
     AttractionReviewsComponent,
     AddReviewComponent,
-    MyItinerariesComponent
+    MyItinerariesComponent,
+    MiniMapComponent
   ],
   imports: [
     BrowserModule,

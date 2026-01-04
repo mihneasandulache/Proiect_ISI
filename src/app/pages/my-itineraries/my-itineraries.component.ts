@@ -50,4 +50,12 @@ export class MyItinerariesComponent implements OnInit {
   goToMap(): void {
     this.router.navigate(['/map']);
   }
+
+  openItineraryOnMap(itinerary: Itinerary): void {
+    if (!itinerary.id) {
+      this.router.navigate(['/map']);
+      return;
+    }
+    this.router.navigate(['/map'], { queryParams: { itineraryId: itinerary.id } });
+  }
 }
