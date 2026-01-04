@@ -138,9 +138,40 @@
   color: #718096;
 }
 
+.posted-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e6fffa;
+  color: #2c7a7b;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
 .card-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn-post {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #3182ce;
+  background: white;
+  color: #3182ce;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+
+  &:hover:not(:disabled) {
+    background: #3182ce;
+    color: white;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }
 
 .btn-delete {

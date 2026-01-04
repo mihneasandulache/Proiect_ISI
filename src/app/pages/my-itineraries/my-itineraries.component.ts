@@ -14,6 +14,7 @@ export class MyItinerariesComponent implements OnInit {
   errorMessage = '';
   currentUser: User | null = null;
   deletingId: string | null = null;
+  postingId: string | null = null;
 
   constructor(
     private apiService: ApiService,
@@ -80,6 +81,31 @@ export class MyItinerariesComponent implements OnInit {
         console.error('Error deleting itinerary:', err);
         this.errorMessage = 'Could not delete itinerary.';
         this.deletingId = null;
+      }
+    });
+  }
+
+  postItinerary(itinerary: Itinerary): void {
+    if (!itinerary.id || this.postingId || itinerary.posted) {
+      return;
+    }
+
+    this.postingId = itinerary.id;
+    const payload = {
+      posted: true,
+      postedAt: new Date().toISOString()
+    };
+
+    this.apiService.updateItinerary(itinerary.id, payload).subscribe({
+      next: () => {
+        itinerary.posted = true;
+        itinerary.postedAt = payload.postedAt;
+        this.postingId = null;
+      },
+      error: (err) => {
+        console.error('Error posting itinerary:', err);
+        this.errorMessage = 'Could not post itinerary.';
+        this.postingId = null;
       }
     });
   }

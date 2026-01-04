@@ -29,6 +29,7 @@ import { AttractionReviewsComponent } from './pages/attraction-reviews/attractio
 import { AddReviewComponent } from './pages/add-review/add-review.component';
 import { MyItinerariesComponent } from './pages/my-itineraries/my-itineraries.component';
 import { MiniMapComponent } from './components/mini-map/mini-map.component';
+import { FeedComponent } from './pages/feed/feed.component';
 
 
 @NgModule({
@@ -42,7 +43,8 @@ import { MiniMapComponent } from './components/mini-map/mini-map.component';
     AttractionReviewsComponent,
     AddReviewComponent,
     MyItinerariesComponent,
-    MiniMapComponent
+    MiniMapComponent,
+    FeedComponent
   ],
   imports: [
     BrowserModule,

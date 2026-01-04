@@ -38,9 +38,17 @@
       <div class="card-details">
         <span *ngIf="itinerary.totalDistance">{{ itinerary.totalDistance | number:'1.0-0' }} km</span>
         <span *ngIf="itinerary.duration">{{ itinerary.duration }}</span>
+        <span class="posted-badge" *ngIf="itinerary.posted">Posted</span>
       </div>
 
       <div class="card-actions">
+        <button
+          class="btn-post"
+          (click)="postItinerary(itinerary)"
+          [disabled]="itinerary.posted || postingId === itinerary.id"
+        >
+          {{ itinerary.posted ? 'Posted' : (postingId === itinerary.id ? 'Posting...' : 'Post') }}
+        </button>
         <button
           class="btn-delete"
           (click)="deleteItinerary(itinerary)"

@@ -42,10 +42,12 @@ export interface Attraction {
 export interface Review {
   review_id?: string;
   user_id: string;
-  attraction_id: string;
+  attraction_id?: string;
+  itinerary_id?: string;
   rating: number;
   comment: string;
   created?: string;
+  userName?: string;
 }
 
 export interface Itinerary {
@@ -62,6 +64,10 @@ export interface Itinerary {
   created?: string;
   routeGeometry?: any;
   routeLine?: any;
+  posted?: boolean;
+  postedAt?: string;
+  ratingAverage?: number;
+  ratingCount?: number;
 }
 
 export interface SurveyPayload {
@@ -75,8 +81,9 @@ export interface SurveyPayload {
 export interface Review {
   id?: string;
   user_id: string;
-  userName: string;
-  attraction_id: string;
+  userName?: string;
+  attraction_id?: string;
+  itinerary_id?: string;
   rating: number;
   comment: string;
   created?: string;
@@ -177,14 +184,27 @@ export class ApiService {
     });
   }
 
+  getItineraryRating(itineraryId: string): Observable<RatingSummary> {
+    return this.http.get<RatingSummary>(`${this.apiUrl}/reviews`, {
+      params: { itinerary_id: itineraryId, action: 'rating' }
+    });
+  }
+
+  getItineraryReviews(itineraryId: string): Observable<Review[]> {
+    return this.http.get<Review[]>(`${this.apiUrl}/reviews`, {
+      params: { itinerary_id: itineraryId }
+    });
+  }
+
   submitReview(review: Review): Observable<any> {
     return this.http.post(`${this.apiUrl}/reviews`, review);
   }
 
-  getReviews(filters?: { attraction_id?: string; user_id?: string }): Observable<Review[]> {
+  getReviews(filters?: { attraction_id?: string; itinerary_id?: string; user_id?: string }): Observable<Review[]> {
     let params = new HttpParams();
     if (filters) {
       if (filters.attraction_id) params = params.set('attraction_id', filters.attraction_id);
+      if (filters.itinerary_id) params = params.set('itinerary_id', filters.itinerary_id);
       if (filters.user_id) params = params.set('user_id', filters.user_id);
     }
     return this.http.get<Review[]>(`${this.apiUrl}/reviews`, { params });
@@ -208,10 +228,11 @@ export class ApiService {
 
   // ============= ITINERARIES =============
 
-  getItineraries(userId?: string, limit?: number): Observable<Itinerary[]> {
+  getItineraries(userId?: string, limit?: number, posted?: boolean): Observable<Itinerary[]> {
     let params = new HttpParams();
     if (userId) params = params.set('userId', userId);
     if (limit) params = params.set('limit', limit.toString());
+    if (posted !== undefined) params = params.set('posted', posted.toString());
     return this.http.get<Itinerary[]>(`${this.apiUrl}/itineraries`, { params });
   }
 

@@ -240,18 +240,19 @@ def delete_attraction(attraction_id):
 def get_reviews():
     """Get reviews with optional filters"""
     attraction_id = request.args.get('attraction_id')
+    itinerary_id = request.args.get('itinerary_id')
     user_id = request.args.get('user_id')
     
     # Adăugăm un parametru 'action' pentru a permite calculul ratingului mediu
     action = request.args.get('action') 
 
     try:
-        if attraction_id and action == 'rating':
+        if (attraction_id or itinerary_id) and action == 'rating':
             # NOU: Returnează doar ratingul mediu și numărul de recenzii
-            rating_data = fb_service.calculate_average_rating(attraction_id)
+            rating_data = fb_service.calculate_average_rating(attraction_id=attraction_id, itinerary_id=itinerary_id)
             return jsonify(rating_data), 200
 
-        reviews = fb_service.get_reviews(attraction_id=attraction_id, user_id=user_id)
+        reviews = fb_service.get_reviews(attraction_id=attraction_id, itinerary_id=itinerary_id, user_id=user_id)
         
         # De asemenea, obține informații de bază despre utilizator și atracție
         for review in reviews:
@@ -280,7 +281,7 @@ def create_review():
     """Create new review"""
     try:
         data = request.json
-        required_fields = ['user_id', 'attraction_id', 'rating', 'comment']
+        required_fields = ['user_id', 'rating', 'comment']
 
         if not all(field in data for field in required_fields):
             return jsonify({'error': 'Missing required fields'}), 400
@@ -288,6 +289,9 @@ def create_review():
         # Validare rating
         if not (1 <= data['rating'] <= 5):
             return jsonify({'error': 'Rating must be between 1 and 5'}), 400
+
+        if not data.get('attraction_id') and not data.get('itinerary_id'):
+            return jsonify({'error': 'Missing attraction_id or itinerary_id'}), 400
 
         # Asigurăm că ID-ul din token se potrivește cu user_id trimis
         if request.user_id != data['user_id']:
@@ -299,6 +303,8 @@ def create_review():
         data['userName'] = user_data.get('username', 'Anonymous') if user_data else 'Unknown User'
 
         review_id = fb_service.create_review(data)
+        if data.get('itinerary_id'):
+            fb_service.update_itinerary_rating(data.get('itinerary_id'))
 
         return jsonify({'review_id': review_id, 'message': 'Review created'}), 201
     except Exception as e:
@@ -308,6 +314,10 @@ def create_review():
 def update_review(review_id):
     """Update existing review"""
     try:
+        existing_review = fb_service.get_review(review_id)
+        if not existing_review:
+            return jsonify({'error': 'Review not found'}), 404
+
         data = request.json
         data['updated'] = datetime.now().isoformat()
 
@@ -316,6 +326,9 @@ def update_review(review_id):
             return jsonify({'error': 'Rating must be between 1 and 5'}), 400
 
         fb_service.update_review(review_id, data)
+        itinerary_id = existing_review.get('itinerary_id')
+        if itinerary_id:
+            fb_service.update_itinerary_rating(itinerary_id)
         return jsonify({'message': 'Review updated'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -324,7 +337,13 @@ def update_review(review_id):
 def delete_review(review_id):
     """Delete review"""
     try:
+        existing_review = fb_service.get_review(review_id)
+        if not existing_review:
+            return jsonify({'error': 'Review not found'}), 404
         fb_service.delete_review(review_id)
+        itinerary_id = existing_review.get('itinerary_id')
+        if itinerary_id:
+            fb_service.update_itinerary_rating(itinerary_id)
         return jsonify({'message': 'Review deleted'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -336,9 +355,13 @@ def get_itineraries():
     """Get itineraries feed"""
     user_id = request.args.get('userId')
     limit = int(request.args.get('limit', 20))
+    posted = request.args.get('posted')
+    posted_filter = None
+    if posted is not None:
+        posted_filter = posted.lower() == 'true'
 
     try:
-        itineraries = fb_service.get_itineraries(limit=limit, user_id=user_id)
+        itineraries = fb_service.get_itineraries(limit=limit, user_id=user_id, posted=posted_filter)
         return jsonify(itineraries), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -370,6 +393,9 @@ def create_itinerary():
         data['created'] = datetime.now().isoformat()
         data['likes'] = 0
         data['views'] = 0
+        data['posted'] = data.get('posted', False)
+        data['ratingAverage'] = data.get('ratingAverage', 0)
+        data['ratingCount'] = data.get('ratingCount', 0)
 
         itinerary_id = fb_service.create_itinerary(data)
 

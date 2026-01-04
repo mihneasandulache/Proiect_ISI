@@ -169,27 +169,31 @@ class FirebaseService:
         ref = self.db.child('reviews').push(data)
         return ref['name']
 
-    def get_reviews(self, attraction_id=None, user_id=None):
+    def get_reviews(self, attraction_id=None, itinerary_id=None, user_id=None):
         """Gets reviews with optional filters."""
         ref = self.db.child('reviews')
         
         query = ref.get()
+        if not query:
+            return []
         reviews = []
         
         for key, value in query.items():
             value['id'] = key
             if attraction_id and value.get('attraction_id') == attraction_id:
                 reviews.append(value)
+            elif itinerary_id and value.get('itinerary_id') == itinerary_id:
+                reviews.append(value)
             elif user_id and value.get('user_id') == user_id:
                 reviews.append(value)
-            elif not attraction_id and not user_id:
+            elif not attraction_id and not itinerary_id and not user_id:
                 reviews.append(value)
                 
         return reviews
     
-    def calculate_average_rating(self, attraction_id):
-        """Calculates the average rating and count for a specific attraction."""
-        reviews = self.get_reviews(attraction_id=attraction_id)
+    def calculate_average_rating(self, attraction_id=None, itinerary_id=None):
+        """Calculates the average rating and count for a specific attraction or itinerary."""
+        reviews = self.get_reviews(attraction_id=attraction_id, itinerary_id=itinerary_id)
         count = len(reviews)
         
         if count == 0:
@@ -201,6 +205,15 @@ class FirebaseService:
         average_rating = round(total_rating / count, 1)
         
         return {'average': average_rating, 'count': count}
+
+    def update_itinerary_rating(self, itinerary_id):
+        """Updates rating summary on itinerary."""
+        rating = self.calculate_average_rating(itinerary_id=itinerary_id)
+        ref = self.db.child('itineraries').child(itinerary_id)
+        ref.update({
+            'ratingAverage': rating.get('average', 0),
+            'ratingCount': rating.get('count', 0)
+        })
 
     def get_review(self, review_id):
         """Get single review by ID"""
@@ -247,7 +260,7 @@ class FirebaseService:
     
     # ============= ITINERARIES =============
     
-    def get_itineraries(self, limit=20, user_id=None):
+    def get_itineraries(self, limit=20, user_id=None, posted=None):
         """Get itineraries for feed"""
         ref = self.db.child('itineraries')
         
@@ -255,8 +268,11 @@ class FirebaseService:
             # Get user's itineraries
             itineraries = ref.order_by_child('userId').equal_to(user_id).get()
         else:
-            # Get all itineraries (for feed)
-            itineraries = ref.order_by_child('created').limit_to_last(limit).get()
+            if posted is True:
+                itineraries = ref.order_by_child('posted').equal_to(True).get()
+            else:
+                # Get all itineraries (for feed)
+                itineraries = ref.order_by_child('created').limit_to_last(limit).get()
         
         if not itineraries:
             return []
@@ -265,10 +281,13 @@ class FirebaseService:
         result = []
         for key, value in itineraries.items():
             value['id'] = key
-            result.append(value)
+            if posted is None or value.get('posted') == posted:
+                result.append(value)
         
         # Sort by created date (newest first)
         result.sort(key=lambda x: x.get('created', ''), reverse=True)
+        if limit and len(result) > limit:
+            result = result[:limit]
         
         return result
     
