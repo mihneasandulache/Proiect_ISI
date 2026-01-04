@@ -8,6 +8,7 @@ import { AuthGuard } from './guards/auth.guard';
 import { SurveyComponent } from './pages/surveycomponent/survey.component';
 import { AttractionReviewsComponent } from './pages/attraction-reviews/attraction-review.component';
 import { AddReviewComponent } from './pages/add-review/add-review.component';
+import { MyItinerariesComponent } from './pages/my-itineraries/my-itineraries.component';
 
 
 export const routes: Routes = [
@@ -26,6 +27,11 @@ export const routes: Routes = [
   {
     path: 'map',
     component: MapComponent
+  },
+  {
+    path: 'my-itineraries',
+    component: MyItinerariesComponent,
+    canActivate: [AuthGuard]
   },
   {
     path: 'survey',

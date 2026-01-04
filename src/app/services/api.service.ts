@@ -61,6 +61,7 @@ export interface Itinerary {
   views?: number;
   created?: string;
   routeGeometry?: any;
+  routeLine?: any;
 }
 
 export interface SurveyPayload {
