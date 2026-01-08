@@ -21,7 +21,6 @@ tourism_service = TourismService()
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
-    """User login"""
     try:
         data = request.json
         required_fields = ['email', 'password']
@@ -58,13 +57,11 @@ def login():
 
 @app.route('/api/auth/logout', methods=['POST'])
 def logout():
-    """User logout (client-side token removal)"""
     return jsonify({'message': 'Logout successful'}), 200
 
 @app.route('/api/auth/verify', methods=['GET'])
 @auth_service.require_auth
 def verify_token():
-    """Verify JWT token"""
     return jsonify({
         'valid': True,
         'user_id': request.user_id,
@@ -75,7 +72,6 @@ def verify_token():
 
 @app.route('/api/users', methods=['POST'])
 def create_user():
-    """Create new user (registration)"""
     try:
         data = request.json
         required_fields = ['username', 'email', 'password']
@@ -108,7 +104,6 @@ def create_user():
 
 @app.route('/api/users/<user_id>', methods=['GET'])
 def get_user(user_id):
-    """Get user by ID"""
     try:
         user = fb_service.get_user(user_id)
         if user:
@@ -122,7 +117,6 @@ def get_user(user_id):
 
 @app.route('/api/users/<user_id>', methods=['PUT'])
 def update_user(user_id):
-    """Update user"""
     try:
         data = request.json
         data['updated'] = datetime.now().isoformat()
@@ -136,7 +130,6 @@ def update_user(user_id):
 
 @app.route('/api/cities', methods=['GET'])
 def get_cities():
-    """Get all cities"""
     try:
         cities = fb_service.get_cities()
         return jsonify(cities), 200
@@ -145,7 +138,6 @@ def get_cities():
 
 @app.route('/api/cities/<city_id>', methods=['GET'])
 def get_city(city_id):
-    """Get single city by ID"""
     try:
         city = fb_service.get_city(city_id)
         if city:
@@ -156,7 +148,6 @@ def get_city(city_id):
 
 @app.route('/api/cities', methods=['POST'])
 def create_city():
-    """Create new city"""
     try:
         data = request.json
         required_fields = ['name']
@@ -175,7 +166,6 @@ def create_city():
 
 @app.route('/api/attractions', methods=['GET'])
 def get_attractions():
-    """Get all attractions with optional filters"""
     city_id = request.args.get('city_id')
     attraction_type = request.args.get('type')
 
@@ -187,7 +177,6 @@ def get_attractions():
 
 @app.route('/api/attractions/<attraction_id>', methods=['GET'])
 def get_attraction(attraction_id):
-    """Get single attraction by ID"""
     try:
         attraction = fb_service.get_attraction(attraction_id)
         if attraction:
@@ -198,7 +187,6 @@ def get_attraction(attraction_id):
 
 @app.route('/api/attractions', methods=['POST'])
 def create_attraction():
-    """Create new attraction"""
     try:
         data = request.json
         required_fields = ['name', 'description', 'type', 'location', 'city_id']
@@ -215,7 +203,6 @@ def create_attraction():
 
 @app.route('/api/attractions/<attraction_id>', methods=['PUT'])
 def update_attraction(attraction_id):
-    """Update existing attraction"""
     try:
         data = request.json
         data['updated'] = datetime.now().isoformat()
@@ -227,7 +214,6 @@ def update_attraction(attraction_id):
 
 @app.route('/api/attractions/<attraction_id>', methods=['DELETE'])
 def delete_attraction(attraction_id):
-    """Delete attraction"""
     try:
         fb_service.delete_attraction(attraction_id)
         return jsonify({'message': 'Attraction deleted'}), 200
@@ -238,25 +224,20 @@ def delete_attraction(attraction_id):
 
 @app.route('/api/reviews', methods=['GET'])
 def get_reviews():
-    """Get reviews with optional filters"""
     attraction_id = request.args.get('attraction_id')
     itinerary_id = request.args.get('itinerary_id')
     user_id = request.args.get('user_id')
     
-    # Adăugăm un parametru 'action' pentru a permite calculul ratingului mediu
-    action = request.args.get('action') 
+    action = request.args.get('action')
 
     try:
         if (attraction_id or itinerary_id) and action == 'rating':
-            # NOU: Returnează doar ratingul mediu și numărul de recenzii
             rating_data = fb_service.calculate_average_rating(attraction_id=attraction_id, itinerary_id=itinerary_id)
             return jsonify(rating_data), 200
 
         reviews = fb_service.get_reviews(attraction_id=attraction_id, itinerary_id=itinerary_id, user_id=user_id)
-        
-        # De asemenea, obține informații de bază despre utilizator și atracție
+
         for review in reviews:
-            # Obține username-ul pentru afișare (dacă nu e deja stocat)
             user_data = fb_service.get_user(review.get('user_id'))
             review['userName'] = user_data.get('username', 'Anonymous') if user_data else 'Unknown User'
 
@@ -266,7 +247,6 @@ def get_reviews():
 
 @app.route('/api/reviews/<review_id>', methods=['GET'])
 def get_review(review_id):
-    """Get single review by ID"""
     try:
         review = fb_service.get_review(review_id)
         if review:
@@ -276,9 +256,8 @@ def get_review(review_id):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/reviews', methods=['POST'])
-@auth_service.require_auth # Protejăm crearea de recenzii
+@auth_service.require_auth
 def create_review():
-    """Create new review"""
     try:
         data = request.json
         required_fields = ['user_id', 'rating', 'comment']
@@ -286,14 +265,11 @@ def create_review():
         if not all(field in data for field in required_fields):
             return jsonify({'error': 'Missing required fields'}), 400
 
-        # Validare rating
         if not (1 <= data['rating'] <= 5):
             return jsonify({'error': 'Rating must be between 1 and 5'}), 400
 
         if not data.get('attraction_id') and not data.get('itinerary_id'):
             return jsonify({'error': 'Missing attraction_id or itinerary_id'}), 400
-
-        # Asigurăm că ID-ul din token se potrivește cu user_id trimis
         if request.user_id != data['user_id']:
              return jsonify({'error': 'Authorization mismatch'}), 403
 
@@ -312,7 +288,6 @@ def create_review():
 
 @app.route('/api/reviews/<review_id>', methods=['PUT'])
 def update_review(review_id):
-    """Update existing review"""
     try:
         existing_review = fb_service.get_review(review_id)
         if not existing_review:
@@ -335,7 +310,6 @@ def update_review(review_id):
 
 @app.route('/api/reviews/<review_id>', methods=['DELETE'])
 def delete_review(review_id):
-    """Delete review"""
     try:
         existing_review = fb_service.get_review(review_id)
         if not existing_review:
@@ -352,7 +326,6 @@ def delete_review(review_id):
 
 @app.route('/api/itineraries', methods=['GET'])
 def get_itineraries():
-    """Get itineraries feed"""
     user_id = request.args.get('userId')
     limit = int(request.args.get('limit', 20))
     posted = request.args.get('posted')
@@ -368,7 +341,6 @@ def get_itineraries():
 
 @app.route('/api/itineraries/<itinerary_id>', methods=['GET'])
 def get_itinerary(itinerary_id):
-    """Get single itinerary by ID"""
     try:
         itinerary = fb_service.get_itinerary(itinerary_id)
         if itinerary:
@@ -381,7 +353,6 @@ def get_itinerary(itinerary_id):
 
 @app.route('/api/itineraries', methods=['POST'])
 def create_itinerary():
-    """Create new itinerary"""
     try:
         data = request.json
         required_fields = ['title', 'description', 'attractions', 'userId', 'userName']
@@ -405,7 +376,6 @@ def create_itinerary():
 
 @app.route('/api/itineraries/<itinerary_id>', methods=['PUT'])
 def update_itinerary(itinerary_id):
-    """Update existing itinerary"""
     try:
         data = request.json
         data['updated'] = datetime.now().isoformat()
@@ -417,7 +387,6 @@ def update_itinerary(itinerary_id):
 
 @app.route('/api/itineraries/<itinerary_id>', methods=['DELETE'])
 def delete_itinerary(itinerary_id):
-    """Delete itinerary"""
     try:
         fb_service.delete_itinerary(itinerary_id)
         return jsonify({'message': 'Itinerary deleted'}), 200
@@ -426,7 +395,6 @@ def delete_itinerary(itinerary_id):
 
 @app.route('/api/itineraries/<itinerary_id>/like', methods=['POST'])
 def like_itinerary(itinerary_id):
-    """Increment likes for itinerary"""
     try:
         success = fb_service.increment_likes(itinerary_id)
         if success:
@@ -439,7 +407,6 @@ def like_itinerary(itinerary_id):
 
 @app.route('/api/routes/calculate', methods=['POST'])
 def calculate_route():
-    """Calculate optimal route using custom algorithm"""
     try:
         data = request.json
         required_fields = ['attractions']
@@ -467,7 +434,6 @@ def calculate_route():
 
 @app.route('/api/routes/compare', methods=['POST'])
 def compare_routes():
-    """Compare custom algorithm with ArcGIS routing"""
     try:
         data = request.json
         required_fields = ['attractions']
@@ -498,7 +464,6 @@ def compare_routes():
 
 @app.route('/api/attractions/search', methods=['GET'])
 def search_attractions():
-    """Search attractions for dropdown with filters"""
     try:
         search_query = request.args.get('q', '').lower()
         city_id = request.args.get('city_id')
@@ -544,7 +509,6 @@ def search_attractions():
 
 @app.route('/api/tourism/config', methods=['GET'])
 def get_tourism_config():
-    """Get tourism layer configuration"""
     try:
         config = tourism_service.get_filter_config()
         return jsonify(config), 200
@@ -553,7 +517,6 @@ def get_tourism_config():
 
 @app.route('/api/tourism/layer-info', methods=['GET'])
 def get_tourism_layer_info():
-    """Get layer information for frontend configuration"""
     try:
         layer_info = tourism_service.get_layer_info()
         return jsonify(layer_info), 200
@@ -562,7 +525,6 @@ def get_tourism_layer_info():
 
 @app.route('/api/tourism/filter', methods=['GET'])
 def get_tourism_filter():
-    """Get definition expression for filtering attractions"""
     try:
         tourism_type = request.args.get('type', 'all')
         definition_expression = tourism_service.build_definition_expression(tourism_type)
@@ -579,7 +541,6 @@ def get_tourism_filter():
 @app.route('/api/survey/preferences', methods=['POST'])
 @auth_service.require_auth
 def submit_preferences():
-    """Submit user travel preferences survey"""
     try:
         data = request.json
         # user_id is already available via require_auth and passed in the payload
@@ -603,7 +564,6 @@ def submit_preferences():
         }), 201
 
     except Exception as e:
-        # Puteți înregistra eroarea reală în log-uri
         print(f"Error submitting survey: {e}")
         return jsonify({'error': 'Could not save preferences'}), 500
 
@@ -611,7 +571,6 @@ def submit_preferences():
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    """Health check endpoint"""
     return jsonify({'status': 'healthy', 'service': 'Romania Tourism API'}), 200
 
 if __name__ == '__main__':

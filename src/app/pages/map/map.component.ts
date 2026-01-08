@@ -200,8 +200,8 @@ export class MapComponent implements OnInit, OnDestroy {
           displayField: "name",
           exactMatch: false,
           outFields: ["*"],
-          name: "Atracții Turistice România",
-          placeholder: "Caută o atracție (ex: Castelul Bran)",
+          name: "Tourist Attractions Romania",
+          placeholder: "Search for an attraction (e.g., Bran Castle)",
           popupTemplate: this.tourismLayer.popupTemplate
         } as any
       ]
@@ -399,7 +399,7 @@ export class MapComponent implements OnInit, OnDestroy {
 
               if (isAlreadyStart || isAlreadyInList) {
                 const statusMsg = document.createElement("div");
-                statusMsg.innerHTML = `<span style="color: #48bb78; font-weight: bold; padding: 8px;">✓ Deja în itinerariu</span>`;
+                statusMsg.innerHTML = `<span style="color: #48bb78; font-weight: bold; padding: 8px;">✓ Already in itinerary</span>`;
                 statusMsg.style.flex = "1";
                 buttonContainer.appendChild(statusMsg);
               } else {
@@ -541,7 +541,7 @@ export class MapComponent implements OnInit, OnDestroy {
       this.routeGraphicsLayer.removeAll();
     }
 
-    console.log("Itinerariul a fost șters complet.");
+    console.log("Itinerary completely cleared.");
   }
 
   canSaveItinerary(): boolean {
@@ -751,7 +751,7 @@ export class MapComponent implements OnInit, OnDestroy {
 
   calculateRoute(): void {
     if (!this.startLocation && this.selectedStops.length < 1) {
-      alert('Vă rugăm să selectați cel puțin 2 locații pentru a calcula ruta.');
+      alert('Please select at least 2 locations to calculate the route.');
       return;
     }
 
@@ -817,7 +817,7 @@ export class MapComponent implements OnInit, OnDestroy {
       error: (error) => {
         console.error('Error calculating route:', error);
         this.routeLoading = false;
-        alert('Eroare la calcularea traseului. Vă rugăm să încercați din nou.');
+        alert('Error calculating route. Please try again.');
       }
     });
   }
@@ -845,7 +845,7 @@ export class MapComponent implements OnInit, OnDestroy {
         features: routeStops
       }),
       returnDirections: true,
-      directionsLanguage: 'ro', // Romanian language for directions
+      directionsLanguage: 'en',
       directionsLengthUnits: 'kilometers',
       outSpatialReference: this.view.spatialReference
     });
@@ -900,17 +900,17 @@ export class MapComponent implements OnInit, OnDestroy {
         }
 
         this.routeLoading = false;
-        alert(`Traseu calculat!\nDistanță: ${totalKm} km\nTimp estimat: ${totalTime} minute\n\nVezi panoul de indicații pentru detalii.`);
+        alert(`Route calculated!\nDistance: ${totalKm} km\nEstimated time: ${totalTime} minutes\n\nSee directions panel for details.`);
       } else {
         this.routeLoading = false;
-        alert('Nu s-a putut calcula traseul pe drumuri. Se afișează distanța directă.');
+        alert('Could not calculate route on roads. Showing direct distance.');
       }
     }).catch((error: any) => {
       console.error('ArcGIS routing error:', error);
       this.routeLoading = false;
 
       // Fallback to simple line if routing service fails
-      alert('Nu s-a putut folosi serviciul de rutare ArcGIS. Se afișează distanța directă: ' + this.totalDistance.toFixed(2) + ' km');
+      alert('Could not use ArcGIS routing service. Showing direct distance: ' + this.totalDistance.toFixed(2) + ' km');
     });
   }
 
@@ -1033,7 +1033,7 @@ export class MapComponent implements OnInit, OnDestroy {
     const isSelected = this.selectedStops.some(s => s.attraction_id === attraction.attraction_id);
 
     if (isStart) {
-      alert('Această locație este deja setată ca Punct de Start!');
+      alert('This location is already set as the Starting Point!');
       return;
     }
 
@@ -1041,7 +1041,7 @@ export class MapComponent implements OnInit, OnDestroy {
       this.selectedStops.push(attraction);
       this.redrawStopGraphics();
     } else {
-      alert('Această locație este deja în lista de opriri!');
+      alert('This location is already in the stops list!');
     }
   }
 
@@ -1053,7 +1053,7 @@ export class MapComponent implements OnInit, OnDestroy {
 
     const newStop: Attraction = {
       attraction_id: attr.OBJECTID?.toString() || `id_${Date.now()}`,
-      name: attr.name || "Locație fără nume",
+      name: attr.name || "Unnamed location",
       location: {
         latitude: point.latitude,
         longitude: point.longitude
@@ -1075,7 +1075,7 @@ export class MapComponent implements OnInit, OnDestroy {
       navigator.geolocation.getCurrentPosition((position) => {
         this.startLocation = {
           attraction_id: 'start_current',
-          name: "Locația Mea",
+          name: "My Location",
           location: {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude

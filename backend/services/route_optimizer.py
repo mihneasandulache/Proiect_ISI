@@ -1,7 +1,3 @@
-"""
-Route Optimization Service
-Implements Nearest Neighbor algorithm starting from user's location
-"""
 import math
 from typing import List, Dict, Optional
 
@@ -10,10 +6,6 @@ class RouteOptimizer:
         self.earth_radius_km = 6371
 
     def calculate_distance(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-        """
-        Calculate distance between two coordinates using Haversine formula
-        Returns distance in kilometers
-        """
         lat1_rad = math.radians(lat1)
         lat2_rad = math.radians(lat2)
         delta_lat = math.radians(lat2 - lat1)
@@ -29,17 +21,6 @@ class RouteOptimizer:
         return distance
 
     def calculate_optimal_route(self, attractions: List[Dict], start_location: Dict = None) -> Dict:
-        """
-        Calculate optimal route using Nearest Neighbor algorithm from a starting location
-
-        Args:
-            attractions: List of attraction dicts with 'latitude', 'longitude', 'name', 'id'
-            start_location: Optional dict with 'latitude', 'longitude', 'name' for starting point
-                          If None, starts from first attraction
-
-        Returns:
-            Dict containing optimized route, total distance, and segments
-        """
         if not attractions:
             return {
                 'route': [],
@@ -182,17 +163,6 @@ class RouteOptimizer:
         }
 
     def two_opt_optimize(self, route: List[Dict], start_location: Dict = None) -> List[Dict]:
-        """
-        Improve route using 2-Opt local search algorithm
-        Eliminates route crossings by reversing segments when it reduces total distance
-
-        Args:
-            route: Initial route to optimize
-            start_location: Optional starting location
-
-        Returns:
-            Optimized route
-        """
         if len(route) <= 2:
             return route
 
@@ -253,16 +223,6 @@ class RouteOptimizer:
         return route
 
     def calculate_route_geometry(self, route: List[Dict], start_location: Dict = None) -> List[List[float]]:
-        """
-        Generate route geometry as list of [longitude, latitude] pairs
-
-        Args:
-            route: List of attractions in order
-            start_location: Optional starting location to include
-
-        Returns:
-            List of [lon, lat] coordinate pairs
-        """
         geometry = []
 
         # Add start location if provided
