@@ -1,15 +1,8 @@
-"""
-OpenStreetMap Tourism Service
-Handles filtering and querying of tourism attractions from ArcGIS OSM layer
-"""
 from typing import Dict, List, Optional
 
 
 class TourismService:
     def __init__(self):
-        """
-        Initialize Tourism Service with OSM Europe Tourism FeatureServer
-        """
         self.feature_server_url = "https://services-eu1.arcgis.com/zci5bUiJ8olAal7N/arcgis/rest/services/OSM_EU_Tourism/FeatureServer/0"
 
         # Accommodation types to exclude
@@ -20,17 +13,6 @@ class TourismService:
         ]
 
     def build_definition_expression(self, tourism_type: Optional[str] = None) -> str:
-        """
-        Build ArcGIS definition expression for filtering attractions
-
-        Args:
-            tourism_type: Optional specific tourism type to filter by
-                         (e.g., 'museum', 'attraction', 'viewpoint')
-                         Use 'all' or None for all non-accommodation attractions
-
-        Returns:
-            ArcGIS SQL definition expression string
-        """
         # Base filter: exclude accommodations and require name
         accommodation_filter = f"tourism NOT IN ({', '.join(repr(t) for t in self.accommodation_types)})"
         base_expression = f"name IS NOT NULL AND {accommodation_filter}"
@@ -42,12 +24,6 @@ class TourismService:
         return base_expression
 
     def get_filter_config(self) -> Dict:
-        """
-        Get tourism filter configuration for frontend
-
-        Returns:
-            Dictionary containing feature server URL and filter options
-        """
         return {
             'feature_server_url': self.feature_server_url,
             'layer_id': 0,
@@ -67,12 +43,6 @@ class TourismService:
         }
 
     def get_layer_info(self) -> Dict:
-        """
-        Get layer information for configuring the FeatureLayer in frontend
-
-        Returns:
-            Dictionary with layer configuration
-        """
         return {
             'url': self.feature_server_url,
             'title': 'Tourist Attractions (Romania)',

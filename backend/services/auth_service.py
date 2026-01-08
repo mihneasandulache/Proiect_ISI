@@ -1,7 +1,3 @@
-"""
-Authentication Service
-Handles user authentication, JWT token generation, and password hashing
-"""
 import jwt
 import bcrypt
 from datetime import datetime, timedelta
@@ -11,19 +7,16 @@ import os
 
 class AuthService:
     def __init__(self, secret_key=None):
-        """Initialize authentication service with JWT secret key"""
         self.secret_key = secret_key or os.getenv('JWT_SECRET_KEY', 'your-secret-key-change-this')
         self.algorithm = 'HS256'
         self.token_expiration_hours = 24
 
     def hash_password(self, password):
-        """Hash a password using bcrypt"""
         salt = bcrypt.gensalt()
         hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
         return hashed.decode('utf-8')
 
     def verify_password(self, password, hashed_password):
-        """Verify a password against its hash"""
         try:
             return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
         except Exception as e:
@@ -31,7 +24,6 @@ class AuthService:
             return False
 
     def generate_token(self, user_id, email):
-        """Generate a JWT token for a user"""
         payload = {
             'user_id': user_id,
             'email': email,
@@ -42,7 +34,6 @@ class AuthService:
         return token
 
     def verify_token(self, token):
-        """Verify and decode a JWT token"""
         try:
             payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
             return payload
@@ -52,7 +43,6 @@ class AuthService:
             return None
 
     def get_token_from_header(self):
-        """Extract JWT token from Authorization header"""
         auth_header = request.headers.get('Authorization')
         if not auth_header:
             return None
@@ -67,7 +57,6 @@ class AuthService:
             return None
 
     def require_auth(self, f):
-        """Decorator to protect routes requiring authentication"""
         @wraps(f)
         def decorated_function(*args, **kwargs):
             token = self.get_token_from_header()
@@ -88,7 +77,6 @@ class AuthService:
         return decorated_function
 
     def optional_auth(self, f):
-        """Decorator for routes where authentication is optional"""
         @wraps(f)
         def decorated_function(*args, **kwargs):
             token = self.get_token_from_header()

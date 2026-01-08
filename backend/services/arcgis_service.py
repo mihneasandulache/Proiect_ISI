@@ -1,32 +1,12 @@
-"""
-ArcGIS Route Service
-Integrates with ArcGIS REST API for optimal route calculation
-"""
 import requests
 from typing import List, Dict
 
 class ArcGISRouteService:
     def __init__(self, api_key: str = None):
-        """
-        Initialize ArcGIS Route Service
-
-        Args:
-            api_key: ArcGIS API key (required for production use)
-        """
         self.api_key = api_key or "AAPTxy8BH1VEsoebNVZXo8HurDPKAq3VaV_xrgUjYre1Pnmwp3O85BVX3fDDKZ1H__qI1kee4d-W5Ai2SSeMCpqWYRpFR_d8YiiRVtGr3WsfTNvUVcuwbnsI6TS9yWTu4Anah6wZlYP73GrnQy_GXhHmnB8lt3sfcc7MpN_MRzvanQ2WjNrxKnBnCuc9DW250fAPPtSyHx31yUN9T5Dh2wlE-DRhGh7RJRYnBBD6IHRhxiY.AT1_4BxOT2Pv"
         self.route_url = "https://route-api.arcgis.com/arcgis/rest/services/World/Route/NAServer/Route_World/solve"
 
     def calculate_optimal_route(self, attractions: List[Dict], start_location: Dict = None) -> Dict:
-        """
-        Calculate optimal route using ArcGIS Route API
-
-        Args:
-            attractions: List of attraction dicts with 'latitude', 'longitude', 'name', 'id'
-            start_location: Optional dict with 'latitude', 'longitude', 'name' for starting point
-
-        Returns:
-            Dict containing route information from ArcGIS
-        """
         if not attractions:
             return {
                 'route': [],
@@ -128,17 +108,6 @@ class ArcGISRouteService:
             }
 
     def _parse_arcgis_response(self, result: Dict, original_attractions: List[Dict], start_location: Dict = None) -> Dict:
-        """
-        Parse ArcGIS API response into standard format
-
-        Args:
-            result: Raw ArcGIS API response
-            original_attractions: Original list of attractions
-            start_location: Starting location if provided
-
-        Returns:
-            Standardized route dictionary
-        """
         try:
             # Extract route feature
             routes = result.get('routes', {}).get('features', [])
